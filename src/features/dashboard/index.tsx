@@ -16,6 +16,7 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { Overview } from './components/overview'
 import { RecentSales } from './components/recent-sales'
 import { SupabaseConnectionTest } from '@/lib/supabase-test'
+import { PrismaConnectionTest } from '@/lib/prisma-test'
 
 export default function Dashboard() {
   return (
@@ -58,7 +59,10 @@ export default function Dashboard() {
             </TabsList>
           </div>
           <TabsContent value='overview' className='space-y-4'>
-            <SupabaseConnectionTest />
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <SupabaseConnectionTest />
+              <PrismaConnectionTest />
+            </div>
             <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
