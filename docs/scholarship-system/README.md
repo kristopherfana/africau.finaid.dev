@@ -12,6 +12,7 @@
 7. [Database Schema](./07-database-schema.md) - Database design and structure
 8. [Security & Authentication](./08-security-authentication.md) - Clerk authentication and security measures
 9. [Backend Architecture](./09-backend-architecture.md) - Supabase and Prisma implementation
+10. [API Endpoints Reference](./10-api-endpoints.md) - Complete list of API endpoints with URLs and examples
 
 ## 🎯 Quick Start
 

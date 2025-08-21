@@ -14,24 +14,333 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  clerkId   String?  @unique // Clerk user ID (optional for existing data)
-  email     String   @unique
-  name      String?
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+// Enums
+enum UserRole {
+  STUDENT
+  ADMIN
 }
 
-model Post {
-  id        String   @id @default(uuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AcademicLevel {
+  UNDERGRADUATE
+  MASTERS
+  PHD
+}
+
+enum SponsorType {
+  INDIVIDUAL
+  ORGANIZATION
+  GOVERNMENT
+}
+
+enum ScholarshipStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum DocumentType {
+  TRANSCRIPT
+  RECOMMENDATION
+  FINANCIAL
+  IDENTITY
+  OTHER
+}
+
+enum DisbursementSchedule {
+  MONTHLY
+  QUARTERLY
+  SEMESTER
+  ANNUAL
+}
+
+enum ReviewRecommendation {
+  APPROVE
+  REJECT
+  WAITLIST
+}
+
+// Core Models
+model User {
+  id       String   @id @default(uuid())
+  clerkId  String   @unique // Clerk authentication ID
+  email    String   @unique
+  role     UserRole @default(STUDENT)
+  isActive Boolean  @default(true)
+
+  // Relationships
+  profile             Profile?
+  applications        Application[]
+  documents           Document[]
+  createdScholarships Scholarship[]     @relation("ScholarshipCreator")
+  applicationReviews  ApplicationReview[]
+  applicationHistory  ApplicationHistory[]
+  auditLogs           AuditLog[]
+
+  // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([role])
+  @@map("users")
+}
+
+model Profile {
+  id          String         @id @default(uuid())
+  userId      String         @unique
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?      @db.Date
+  gender      Gender?
+  nationality String?
+  phone       String?
+  address     String?
+  studentId   String?        @unique
+  program     String?
+  level       AcademicLevel?
+  yearOfStudy Int?
+  gpa         Decimal?       @db.Decimal(3, 2)
+  profilePicture String?
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([level])
+  @@map("profiles")
+}
+
+model Sponsor {
+  id            String      @id @default(uuid())
+  name          String
+  type          SponsorType
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  website       String?
+  logoUrl       String?
+  totalFunding  Decimal     @default(0) @db.Decimal(12, 2)
+  isActive      Boolean     @default(true)
+
+  // Relationships
+  scholarships Scholarship[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([type])
+  @@index([isActive])
+  @@map("sponsors")
+}
+
+model Scholarship {
+  id                   String                @id @default(uuid())
+  sponsorId            String
+  name                 String
+  description          String?
+  amount               Decimal               @db.Decimal(10, 2)
+  currency             String                @default("USD")
+  totalSlots           Int
+  availableSlots       Int
+  applicationStartDate DateTime              @db.Date
+  applicationEndDate   DateTime              @db.Date
+  academicYear         String // Format: "2025-2026"
+  durationMonths       Int
+  disbursementSchedule DisbursementSchedule
+  status               ScholarshipStatus     @default(DRAFT)
+  createdBy            String?
+
+  // Relationships
+  sponsor      Sponsor               @relation(fields: [sponsorId], references: [id])
+  creator      User?                 @relation("ScholarshipCreator", fields: [createdBy], references: [id])
+  criteria     ScholarshipCriteria[]
+  applications Application[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sponsorId])
+  @@index([status])
+  @@index([applicationStartDate, applicationEndDate])
+  @@map("scholarships")
+}
+
+model ScholarshipCriteria {
+  id            String  @id @default(uuid())
+  scholarshipId String
+  criteriaType  String // MIN_GPA, NATIONALITY, GENDER, ACADEMIC_LEVEL, etc.
+  criteriaValue Json // Flexible JSON storage for different criteria
+  isMandatory   Boolean @default(true)
+
+  // Relationships
+  scholarship Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([scholarshipId])
+  @@index([criteriaType])
+  @@map("scholarship_criteria")
+}
+
+model Application {
+  id                String            @id @default(uuid())
+  applicationNumber String            @unique
+  userId            String
+  scholarshipId     String
+  status            ApplicationStatus @default(DRAFT)
+  motivationLetter  String?
+  additionalInfo    Json?
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  decisionAt        DateTime?
+  decisionBy        String?
+  decisionNotes     String?
+  score             Decimal?          @db.Decimal(5, 2)
+
+  // Relationships
+  user         User                  @relation(fields: [userId], references: [id])
+  scholarship  Scholarship           @relation(fields: [scholarshipId], references: [id])
+  documents    ApplicationDocument[]
+  reviews      ApplicationReview[]
+  history      ApplicationHistory[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scholarshipId]) // Prevent duplicate applications
+  @@index([userId])
+  @@index([scholarshipId])
+  @@index([status])
+  @@index([submittedAt])
+  @@map("applications")
+}
+
+model Document {
+  id           String        @id @default(uuid())
+  userId       String
+  documentType DocumentType
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  checksum     String?
+  isVerified   Boolean       @default(false)
+  verifiedBy   String?
+  verifiedAt   DateTime?
+  expiryDate   DateTime?     @db.Date
+
+  // Relationships
+  user         User                  @relation(fields: [userId], references: [id])
+  applications ApplicationDocument[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([documentType])
+  @@index([isVerified])
+  @@map("documents")
+}
+
+model ApplicationDocument {
+  id            String  @id @default(uuid())
+  applicationId String
+  documentId    String
+  isRequired    Boolean @default(true)
+
+  // Relationships
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  document    Document    @relation(fields: [documentId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@unique([applicationId, documentId]) // Prevent duplicate links
+  @@index([applicationId])
+  @@map("application_documents")
+}
+
+model ApplicationReview {
+  id             String                @id @default(uuid())
+  applicationId  String
+  reviewerId     String
+  score          Decimal?              @db.Decimal(5, 2)
+  comments       String?
+  recommendation ReviewRecommendation?
+  reviewedAt     DateTime              @default(now())
+
+  // Relationships
+  application Application @relation(fields: [applicationId], references: [id])
+  reviewer    User        @relation(fields: [reviewerId], references: [id])
+
+  @@index([applicationId])
+  @@index([reviewerId])
+  @@map("application_reviews")
+}
+
+model ApplicationHistory {
+  id            String  @id @default(uuid())
+  applicationId String
+  action        String // CREATED, SUBMITTED, REVIEWED, APPROVED, etc.
+  performedBy   String?
+  notes         String?
+  metadata      Json?
+
+  // Relationships
+  application Application @relation(fields: [applicationId], references: [id])
+  user        User?       @relation(fields: [performedBy], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([applicationId])
+  @@index([createdAt])
+  @@map("application_history")
+}
+
+model AuditLog {
+  id         String  @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?
+
+  // Relationships
+  user User? @relation(fields: [userId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
 }
