@@ -1,0 +1,850 @@
+/* Africa University Theme Styles */
+
+/* AU Distinctive Color Block Sections */
+.au-color-block {
+  padding: 48px 32px;
+  position: relative;
+  text-align: center;
+}
+
+.au-color-block-red {
+  background: #c20000;
+  color: white;
+}
+
+.au-color-block-white {
+  background: white;
+  color: #333;
+  border: 1px solid #e5e5e5;
+}
+
+.au-color-block-black {
+  background: #1a1a1a;
+  color: white;
+}
+
+.au-color-block-gray {
+  background: #f8f8f8;
+  color: #333;
+}
+
+/* Three Column Layout like Mission/Vision/Values */
+.au-three-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .au-three-column {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* AU Background Patterns and Textures */
+
+/* Subtle dot pattern background */
+.au-bg-dots {
+  background-image: radial-gradient(circle, rgba(0,0,0,0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Geometric pattern background */
+.au-bg-geometric {
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.03'%3E%3Cpath d='M20 20.5V18H0v-2h20v2.5zm-.5 0h-19V20H0v-2h19.5v2.5zM0 19h20v.5H0V19z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 40px 40px;
+}
+
+/* Subtle grid pattern */
+.au-bg-grid {
+  background-image: 
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* Diagonal lines pattern */
+.au-bg-diagonal {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0,0,0,0.02) 10px,
+    rgba(0,0,0,0.02) 20px
+  );
+}
+
+/* Academic book/education pattern */
+.au-bg-education {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.02'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm-20-18c9.941 0 18 8.059 18 18s-8.059 18-18 18S-8 39.941-8 30s8.059-18 18-18z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 60px 60px;
+}
+
+/* Hero Sections with Patterns */
+.au-hero {
+  background: linear-gradient(135deg, rgba(194, 0, 0, 0.95) 0%, rgba(139, 0, 0, 0.95) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.au-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M40 40c0-11.046 8.954-20 20-20s20 8.954 20 20-8.954 20-20 20-20-8.954-20-20zm20-18c9.941 0 18 8.059 18 18s-8.059 18-18 18-18-8.059-18-18 8.059-18 18-18z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  opacity: 0.3;
+}
+
+/* AU Red Hero with Academic Pattern */
+.au-hero-academic {
+  background: linear-gradient(135deg, #c20000 0%, #8b0000 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.au-hero-academic::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M50 50l20-20v10L60 50l10 10v10L50 50zm0 0l-20 20v-10l10-10-10-10v-10l20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 100px 100px;
+  opacity: 0.4;
+}
+
+/* White Section with Subtle Pattern */
+.au-section-white-patterned {
+  background: white;
+  position: relative;
+}
+
+.au-section-white-patterned::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c20000' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3Ccircle cx='10' cy='10' r='1'/%3E%3Ccircle cx='50' cy='10' r='1'/%3E%3Ccircle cx='10' cy='50' r='1'/%3E%3Ccircle cx='50' cy='50' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* Gray Section with Texture */
+.au-section-gray-textured {
+  background: #f8f8f8;
+  position: relative;
+}
+
+.au-section-gray-textured::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.02'%3E%3Cpath d='M0 0h40v1H0V0zm0 4h40v1H0V4zm0 4h40v1H0V8zm0 4h40v1H0v-1zm0 4h40v1H0v-1zm0 4h40v1H0v-1zm0 4h40v1H0v-1zm0 4h40v1H0v-1zm0 4h40v1H0v-1z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* Card with Subtle Background Pattern */
+.au-card-patterned {
+  background: white;
+  position: relative;
+}
+
+.au-card-patterned::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c20000' fill-opacity='0.01'%3E%3Ccircle cx='10' cy='10' r='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.au-card-patterned > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Content Cards with AU Style */
+.au-card {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.au-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.au-card-featured {
+  border-left: 4px solid #c20000;
+}
+
+/* Section Headers */
+.au-section-header {
+  position: relative;
+  padding-bottom: 16px;
+  margin-bottom: 32px;
+}
+
+.au-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: #c20000;
+}
+
+/* Statistic Display */
+.au-stat {
+  text-align: center;
+  padding: 24px;
+}
+
+
+/* Navigation Active State */
+.au-nav-active {
+  background: linear-gradient(90deg, rgba(194, 0, 0, 0.1) 0%, transparent 100%);
+  border-left: 3px solid #c20000;
+}
+
+/* Buttons with AU Style */
+.au-btn-primary {
+  background: #c20000;
+  color: white;
+  padding: 12px 32px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.au-btn-primary:hover {
+  background: #a00000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(194, 0, 0, 0.3);
+}
+
+.au-btn-secondary {
+  background: transparent;
+  color: #c20000;
+  border: 2px solid #c20000;
+  padding: 12px 32px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.au-btn-secondary:hover {
+  background: #c20000;
+  color: white;
+}
+
+/* Form Groups */
+.au-form-group {
+  margin-bottom: 24px;
+}
+
+.au-form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.au-form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.au-form-input:focus {
+  border-color: #c20000;
+  box-shadow: 0 0 0 3px rgba(194, 0, 0, 0.1);
+  outline: none;
+}
+
+/* Scholarship Cards */
+.scholarship-card {
+  background: white;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.scholarship-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+.scholarship-card-header {
+  background: linear-gradient(135deg, #c20000 0%, #8b0000 100%);
+  color: white;
+  padding: 20px;
+}
+
+.scholarship-card-body {
+  padding: 20px;
+}
+
+.scholarship-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #c20000;
+}
+
+/* Badge Styles */
+.au-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  border: 1px solid transparent;
+}
+
+.au-badge-success {
+  background: #e7f5e7;
+  color: #2e7d2e;
+}
+
+.au-badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.au-badge-danger {
+  background: #ffe5e5;
+  color: #c20000;
+}
+
+/* Progress Indicators */
+.au-progress {
+  height: 8px;
+  background: #f0f0f0;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.au-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #c20000 0%, #ff4444 100%);
+  transition: width 0.3s ease;
+}
+
+/* AU Sidebar Design Spirit */
+
+/* Main Sidebar Container */
+.au-sidebar {
+  background: white !important;
+  border-right: 1px solid #e5e5e5 !important;
+  position: relative;
+  z-index: 20 !important;
+}
+
+.au-sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c20000' fill-opacity='0.015'%3E%3Ccircle cx='20' cy='20' r='1'/%3E%3Ccircle cx='5' cy='5' r='0.5'/%3E%3Ccircle cx='35' cy='5' r='0.5'/%3E%3Ccircle cx='5' cy='35' r='0.5'/%3E%3Ccircle cx='35' cy='35' r='0.5'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.au-sidebar [data-slot="sidebar-inner"] {
+  background: white !important;
+}
+
+/* Ensure sidebar container stays fixed */
+[data-slot="sidebar-container"] {
+  position: fixed !important;
+  z-index: 20 !important;
+}
+
+.au-sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Sidebar Header with AU Spirit */
+.au-sidebar-header {
+  background: linear-gradient(135deg, #c20000 0%, #8b0000 100%);
+  color: white;
+  padding: 12px 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.au-sidebar-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M15 15l5-5v2.5L17.5 15l2.5 2.5V20L15 15zm0 0l-5 5v-2.5L12.5 15 10 12.5V10l5 5z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 30px 30px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.au-sidebar-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.au-sidebar-header [data-slot="sidebar-menu-button"] {
+  color: white !important;
+  background: transparent !important;
+}
+
+.au-sidebar-header [data-slot="sidebar-menu-button"]:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.au-sidebar-header span {
+  color: white !important;
+}
+
+/* Team Switcher Collapsed State */
+.group-data-[state=collapsed] .au-sidebar-header [data-slot="sidebar-menu-button"] {
+  justify-content: center !important;
+  padding: 8px !important;
+  margin: 0 !important;
+}
+
+.group-data-[state=collapsed] .au-sidebar-header [data-slot="sidebar-menu-button"] > div:last-child {
+  display: none;
+}
+
+.group-data-[state=collapsed] .au-sidebar-header [data-slot="sidebar-menu-button"] > div:first-child {
+  margin: 0 !important;
+}
+
+/* Alternative selectors for collapsed state */
+[data-state="collapsed"] .au-sidebar-header [data-slot="sidebar-menu-button"] {
+  justify-content: center !important;
+  padding: 8px !important;
+  margin: 0 !important;
+}
+
+[data-state="collapsed"] .au-sidebar-header [data-slot="sidebar-menu-button"] > div:last-child {
+  display: none;
+}
+
+[data-state="collapsed"] .au-sidebar-header [data-slot="sidebar-menu-button"] > div:first-child {
+  margin: 0 !important;
+}
+
+/* Navigation Section Headers */
+.au-nav-section-header {
+  background: #f8f8f8;
+  color: #666;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 12px 16px 8px 16px;
+  position: relative;
+  border-bottom: 1px solid #e5e5e5;
+  margin-top: 0;
+  transition: all 0.2s ease;
+}
+
+/* Hide section headers when sidebar is collapsed */
+[data-slot="sidebar"][data-state="collapsed"] .au-nav-section-header,
+[data-state="collapsed"] .au-nav-section-header,
+.group[data-state="collapsed"] .au-nav-section-header,
+.group-data-[state=collapsed] .au-nav-section-header {
+  display: none;
+}
+
+/* Hide the default sidebar group label */
+.au-sidebar [data-slot="sidebar-group-label"] {
+  display: none;
+}
+
+.au-nav-section-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c20000' fill-opacity='0.02'%3E%3Cpath d='M0 0h1v20H0V0zm2 0h1v20H2V0zm2 0h1v20H4V0zm2 0h1v20H6V0zm2 0h1v20H8V0zm2 0h1v20h-1V0zm2 0h1v20h-1V0zm2 0h1v20h-1V0zm2 0h1v20h-1V0zm2 0h1v20h-1V0z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+/* Navigation Items with AU Style */
+.au-sidebar [data-slot="sidebar-menu-button"] {
+  color: #333 !important;
+  background: transparent !important;
+  border-left: 3px solid transparent;
+  border-radius: 0 !important;
+  padding: 12px 16px !important;
+  transition: all 0.2s ease;
+  position: relative;
+  justify-content: flex-start !important;
+}
+
+.au-sidebar [data-slot="sidebar-menu-button"]:hover {
+  background: linear-gradient(90deg, rgba(194, 0, 0, 0.05) 0%, transparent 100%) !important;
+  border-left-color: rgba(194, 0, 0, 0.3);
+}
+
+.au-sidebar [data-slot="sidebar-menu-button"][data-active="true"] {
+  background: linear-gradient(90deg, rgba(194, 0, 0, 0.1) 0%, transparent 100%) !important;
+  border-left-color: #c20000;
+  color: #c20000 !important;
+  font-weight: 600;
+}
+
+.au-sidebar [data-slot="sidebar-menu-button"][data-active="true"]::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: #c20000;
+  border-radius: 50%;
+}
+
+/* Icon styling */
+.au-sidebar [data-slot="sidebar-menu-button"] svg {
+  width: 18px !important;
+  height: 18px !important;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+/* Text styling */
+.au-sidebar [data-slot="sidebar-menu-button"] span {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Badge styling */
+.au-nav-item-badge {
+  background: #c20000 !important;
+  color: white !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  font-weight: 600 !important;
+  min-width: 20px;
+  height: 20px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 !important;
+  margin-left: auto;
+}
+
+/* Sidebar Footer with AU Pattern */
+.au-sidebar-footer {
+  background: #f8f8f8 !important;
+  border-top: 1px solid #e5e5e5;
+  padding: 16px;
+  position: relative;
+}
+
+.au-sidebar-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='15' height='15' viewBox='0 0 15 15' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c20000' fill-opacity='0.02'%3E%3Ccircle cx='7.5' cy='7.5' r='0.5'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 15px 15px;
+  pointer-events: none;
+}
+
+.au-sidebar-footer > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Collapsible States */
+.au-sidebar-collapsed .au-nav-item-text {
+  display: none;
+}
+
+.au-sidebar-collapsed .au-nav-item-badge {
+  display: none;
+}
+
+.au-sidebar-collapsed .au-nav-item {
+  justify-content: center;
+  padding: 12px;
+}
+
+/* User Profile in Sidebar */
+.au-user-profile {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  transition: all 0.2s ease;
+}
+
+.au-user-profile:hover {
+  background: #f8f8f8;
+  border-color: rgba(194, 0, 0, 0.2);
+}
+
+.au-user-avatar {
+  width: 40px;
+  height: 40px;
+  background: #c20000;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.au-user-info h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.au-user-info p {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 2px 0 0 0;
+}
+
+/* Content Sections */
+.au-content-section {
+  background: white;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Typography Enhancements */
+.au-heading-1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.au-heading-2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.au-heading-3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.au-text-lead {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: #555;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.au-animate-fade-in {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Responsive Grid */
+.au-grid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .au-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .au-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .au-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* AU Statistics Display - Clean and Bold */
+.au-stat-section {
+  background: #f8f8f8;
+  padding: 64px 32px;
+  text-align: center;
+}
+
+.au-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.au-stat-item {
+  padding: 24px;
+}
+
+.au-stat-number {
+  font-size: 4rem;
+  font-weight: 800;
+  color: #c20000;
+  line-height: 1;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.au-stat-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* AU Content Blocks - High Contrast */
+.au-content-highlight {
+  background: #c20000;
+  color: white;
+  padding: 32px;
+  margin: 24px 0;
+  position: relative;
+}
+
+.au-content-highlight h2,
+.au-content-highlight h3 {
+  color: white;
+  margin-bottom: 16px;
+}
+
+.au-content-highlight-inverse {
+  background: white;
+  color: #1a1a1a;
+  border: 2px solid #c20000;
+  padding: 32px;
+  margin: 24px 0;
+}
+
+/* Status Indicators */
+.au-status-indicator {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.au-status-active {
+  background: #10b981;
+}
+
+.au-status-pending {
+  background: #f59e0b;
+}
+
+.au-status-inactive {
+  background: #6b7280;
+}
+
+/* AU Feature Boxes */
+.au-feature-box {
+  background: white;
+  border: 1px solid #e5e5e5;
+  padding: 32px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.au-feature-box:hover {
+  border-color: #c20000;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.au-feature-box-icon {
+  width: 64px;
+  height: 64px;
+  background: #c20000;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  font-size: 24px;
+}
+
+/* AU Call to Action Sections */
+.au-cta-section {
+  background: #1a1a1a;
+  color: white;
+  padding: 64px 32px;
+  text-align: center;
+}
+
+.au-cta-section h2 {
+  color: white;
+  margin-bottom: 24px;
+  font-size: 2.5rem;
+}
+
+.au-cta-section p {
+  font-size: 1.25rem;
+  margin-bottom: 32px;
+  opacity: 0.9;
+}
