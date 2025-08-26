@@ -361,7 +361,7 @@
 /* Main Sidebar Container */
 .au-sidebar {
   background: white !important;
-  border-right: 1px solid #e5e5e5 !important;
+  border-right: 1px solid rgba(229, 229, 229, 0.3) !important;
   position: relative;
   z-index: 20 !important;
 }
@@ -394,27 +394,17 @@
   z-index: 1;
 }
 
-/* Sidebar Header with AU Spirit */
+/* Sidebar Header with AU Spirit - Matching Top Nav */
 .au-sidebar-header {
-  background: linear-gradient(135deg, #c20000 0%, #8b0000 100%);
+  background: #c20000;
   color: white;
-  padding: 12px 16px;
+  padding: 0 16px;
   position: relative;
   overflow: hidden;
   transition: all 0.2s ease;
-}
-
-.au-sidebar-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M15 15l5-5v2.5L17.5 15l2.5 2.5V20L15 15zm0 0l-5 5v-2.5L12.5 15 10 12.5V10l5 5z'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 30px 30px;
-  opacity: 0.6;
-  pointer-events: none;
+  height: 64px;
+  display: flex;
+  align-items: center;
 }
 
 .au-sidebar-header > * {
@@ -425,6 +415,8 @@
 .au-sidebar-header [data-slot="sidebar-menu-button"] {
   color: white !important;
   background: transparent !important;
+  min-height: 48px;
+  padding: 8px 12px !important;
 }
 
 .au-sidebar-header [data-slot="sidebar-menu-button"]:hover {
@@ -433,12 +425,20 @@
 
 .au-sidebar-header span {
   color: white !important;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.au-sidebar-header [data-slot="sidebar-menu-button"] svg,
+.au-sidebar-header [data-slot="sidebar-menu-button"] img {
+  width: 32px !important;
+  height: 32px !important;
 }
 
 /* Team Switcher Collapsed State */
 .group-data-[state=collapsed] .au-sidebar-header [data-slot="sidebar-menu-button"] {
   justify-content: center !important;
-  padding: 8px !important;
+  padding: 12px !important;
   margin: 0 !important;
 }
 
@@ -453,7 +453,7 @@
 /* Alternative selectors for collapsed state */
 [data-state="collapsed"] .au-sidebar-header [data-slot="sidebar-menu-button"] {
   justify-content: center !important;
-  padding: 8px !important;
+  padding: 12px !important;
   margin: 0 !important;
 }
 

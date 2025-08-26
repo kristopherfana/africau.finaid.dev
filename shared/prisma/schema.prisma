@@ -9,77 +9,19 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-// Enums
-enum UserRole {
-  STUDENT
-  ADMIN
-}
-
-enum Gender {
-  MALE
-  FEMALE
-}
-
-enum AcademicLevel {
-  UNDERGRADUATE
-  MASTERS
-  PHD
-}
-
-enum SponsorType {
-  INDIVIDUAL
-  ORGANIZATION
-  GOVERNMENT
-}
-
-enum ScholarshipStatus {
-  DRAFT
-  ACTIVE
-  INACTIVE
-  ARCHIVED
-}
-
-enum ApplicationStatus {
-  DRAFT
-  SUBMITTED
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
-  WITHDRAWN
-}
-
-enum DocumentType {
-  TRANSCRIPT
-  RECOMMENDATION
-  FINANCIAL
-  IDENTITY
-  OTHER
-}
-
-enum DisbursementSchedule {
-  MONTHLY
-  QUARTERLY
-  SEMESTER
-  ANNUAL
-}
-
-enum ReviewRecommendation {
-  APPROVE
-  REJECT
-  WAITLIST
-}
+// Note: SQLite doesn't support enums, so we use String fields with constraints
 
 // Core Models
 model User {
   id       String   @id @default(uuid())
-  clerkId  String   @unique // Clerk authentication ID
+  clerkId  String?  @unique // Clerk authentication ID (optional for now)
   email    String   @unique
-  role     UserRole @default(STUDENT)
+  password String?  // Password for authentication
+  role     String   @default("STUDENT") // STUDENT, ADMIN, SPONSOR
   isActive Boolean  @default(true)
 
   // Relationships
@@ -104,16 +46,16 @@ model Profile {
   userId      String         @unique
   firstName   String
   lastName    String
-  dateOfBirth DateTime?      @db.Date
-  gender      Gender?
+  dateOfBirth DateTime?
+  gender      String? // MALE, FEMALE
   nationality String?
   phone       String?
   address     String?
   studentId   String?        @unique
   program     String?
-  level       AcademicLevel?
+  level       String? // UNDERGRADUATE, MASTERS, PHD
   yearOfStudy Int?
-  gpa         Decimal?       @db.Decimal(3, 2)
+  gpa         Float?
   profilePicture String?
 
   // Relationships
@@ -131,14 +73,14 @@ model Profile {
 model Sponsor {
   id            String      @id @default(uuid())
   name          String
-  type          SponsorType
+  type          String // INDIVIDUAL, ORGANIZATION, GOVERNMENT
   contactPerson String?
   email         String?
   phone         String?
   address       String?
   website       String?
   logoUrl       String?
-  totalFunding  Decimal     @default(0) @db.Decimal(12, 2)
+  totalFunding  Float       @default(0)
   isActive      Boolean     @default(true)
 
   // Relationships
@@ -159,16 +101,16 @@ model Scholarship {
   sponsorId            String
   name                 String
   description          String?
-  amount               Decimal               @db.Decimal(10, 2)
+  amount               Float
   currency             String                @default("USD")
   totalSlots           Int
   availableSlots       Int
-  applicationStartDate DateTime              @db.Date
-  applicationEndDate   DateTime              @db.Date
+  applicationStartDate DateTime
+  applicationEndDate   DateTime
   academicYear         String // Format: "2025-2026"
   durationMonths       Int
-  disbursementSchedule DisbursementSchedule
-  status               ScholarshipStatus     @default(DRAFT)
+  disbursementSchedule String // MONTHLY, QUARTERLY, SEMESTER, ANNUAL
+  status               String                @default("DRAFT") // DRAFT, ACTIVE, INACTIVE, ARCHIVED
   createdBy            String?
 
   // Relationships
@@ -191,7 +133,7 @@ model ScholarshipCriteria {
   id            String  @id @default(uuid())
   scholarshipId String
   criteriaType  String // MIN_GPA, NATIONALITY, GENDER, ACADEMIC_LEVEL, etc.
-  criteriaValue Json // Flexible JSON storage for different criteria
+  criteriaValue String // JSON string for different criteria
   isMandatory   Boolean @default(true)
 
   // Relationships
@@ -210,15 +152,15 @@ model Application {
   applicationNumber String            @unique
   userId            String
   scholarshipId     String
-  status            ApplicationStatus @default(DRAFT)
+  status            String            @default("DRAFT") // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, WITHDRAWN
   motivationLetter  String?
-  additionalInfo    Json?
+  additionalInfo    String? // JSON string
   submittedAt       DateTime?
   reviewedAt        DateTime?
   decisionAt        DateTime?
   decisionBy        String?
   decisionNotes     String?
-  score             Decimal?          @db.Decimal(5, 2)
+  score             Float?
 
   // Relationships
   user         User                  @relation(fields: [userId], references: [id])
@@ -242,7 +184,7 @@ model Application {
 model Document {
   id           String        @id @default(uuid())
   userId       String
-  documentType DocumentType
+  documentType String // TRANSCRIPT, RECOMMENDATION, FINANCIAL, IDENTITY, OTHER
   fileName     String
   filePath     String
   fileSize     Int
@@ -251,7 +193,7 @@ model Document {
   isVerified   Boolean       @default(false)
   verifiedBy   String?
   verifiedAt   DateTime?
-  expiryDate   DateTime?     @db.Date
+  expiryDate   DateTime?
 
   // Relationships
   user         User                  @relation(fields: [userId], references: [id])
@@ -288,9 +230,9 @@ model ApplicationReview {
   id             String                @id @default(uuid())
   applicationId  String
   reviewerId     String
-  score          Decimal?              @db.Decimal(5, 2)
+  score          Float?
   comments       String?
-  recommendation ReviewRecommendation?
+  recommendation String? // APPROVE, REJECT, WAITLIST
   reviewedAt     DateTime              @default(now())
 
   // Relationships
@@ -308,7 +250,7 @@ model ApplicationHistory {
   action        String // CREATED, SUBMITTED, REVIEWED, APPROVED, etc.
   performedBy   String?
   notes         String?
-  metadata      Json?
+  metadata      String? // JSON string
 
   // Relationships
   application Application @relation(fields: [applicationId], references: [id])
@@ -328,8 +270,8 @@ model AuditLog {
   action     String
   entityType String
   entityId   String?
-  oldValues  Json?
-  newValues  Json?
+  oldValues  String? // JSON string
+  newValues  String? // JSON string
   ipAddress  String?
   userAgent  String?
 

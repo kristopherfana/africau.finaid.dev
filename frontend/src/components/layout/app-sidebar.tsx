@@ -8,9 +8,19 @@ import {
 import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
 import { TeamSwitcher } from '@/components/layout/team-switcher'
-import { sidebarData } from './data/sidebar-data'
+import { getNavDataForRole } from './data/role-based-sidebar'
+import { useAuth } from '@/stores/authStore'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth()
+  
+  // Get role-based sidebar data
+  const sidebarData = user ? getNavDataForRole(user.role, user) : null
+  
+  if (!sidebarData) {
+    return null
+  }
+
   return (
     <Sidebar collapsible='icon' variant='sidebar' className="au-sidebar" {...props}>
       <SidebarHeader className="au-sidebar-header">

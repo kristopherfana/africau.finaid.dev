@@ -17,7 +17,11 @@ export default function Users() {
 
   return (
     <UsersProvider>
-      <Header fixed>
+      <Header 
+        fixed
+        style={{ background: 'linear-gradient(135deg, #c20000 0%, #8b0000 100%)' }}
+        className="[&_button]:text-white [&_button]:hover:text-white/80 [&_button]:hover:bg-white/10 [&_button]:bg-transparent [&_svg]:text-white [&_img]:border-white/20 [&_.border-r]:border-white/20 [&_[data-slot='sidebar-trigger']]:bg-transparent [&_[data-slot='sidebar-trigger']]:hover:bg-white/10 [&_[data-slot='sidebar-trigger']]:text-white [&_input]:text-white [&_input::placeholder]:text-white/60"
+      >
         <Search />
         <div className='ml-auto flex items-center space-x-4'>
           <ThemeSwitch />
