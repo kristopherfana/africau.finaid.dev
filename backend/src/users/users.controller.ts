@@ -10,6 +10,8 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +21,7 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -26,6 +29,7 @@ import { UserResponseDto } from './dto/user-response.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -83,10 +87,8 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(): Promise<UserResponseDto> {
-    // TODO: Get user ID from JWT token
-    const userId = 'current-user-id';
-    return this.usersService.findOne(userId);
+  async getProfile(@Request() req: any): Promise<UserResponseDto> {
+    return this.usersService.findOne(req.user.id);
   }
 
   @Get('statistics')

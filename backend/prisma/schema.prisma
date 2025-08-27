@@ -1,0 +1,288 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Note: SQLite doesn't support enums, so we use String fields with constraints
+
+// Core Models
+model User {
+  id       String   @id @default(uuid())
+  clerkId  String?  @unique // Clerk authentication ID (optional for now)
+  email    String   @unique
+  password String?  // Password for authentication
+  role     String   @default("STUDENT") // STUDENT, ADMIN, SPONSOR
+  isActive Boolean  @default(true)
+
+  // Relationships
+  profile             Profile?
+  applications        Application[]
+  documents           Document[]
+  createdScholarships Scholarship[]     @relation("ScholarshipCreator")
+  applicationReviews  ApplicationReview[]
+  applicationHistory  ApplicationHistory[]
+  auditLogs           AuditLog[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@map("users")
+}
+
+model Profile {
+  id          String         @id @default(uuid())
+  userId      String         @unique
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?
+  gender      String? // MALE, FEMALE
+  nationality String?
+  phone       String?
+  address     String?
+  studentId   String?        @unique
+  program     String?
+  level       String? // UNDERGRADUATE, MASTERS, PHD
+  yearOfStudy Int?
+  gpa         Float?
+  profilePicture String?
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([level])
+  @@map("profiles")
+}
+
+model Sponsor {
+  id            String      @id @default(uuid())
+  name          String
+  type          String // INDIVIDUAL, ORGANIZATION, GOVERNMENT
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  website       String?
+  logoUrl       String?
+  totalFunding  Float       @default(0)
+  isActive      Boolean     @default(true)
+
+  // Relationships
+  scholarships Scholarship[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([type])
+  @@index([isActive])
+  @@map("sponsors")
+}
+
+model Scholarship {
+  id                   String                @id @default(uuid())
+  sponsorId            String
+  name                 String
+  description          String?
+  amount               Float
+  currency             String                @default("USD")
+  totalSlots           Int
+  availableSlots       Int
+  applicationStartDate DateTime
+  applicationEndDate   DateTime
+  academicYear         String // Format: "2025-2026"
+  durationMonths       Int
+  disbursementSchedule String // MONTHLY, QUARTERLY, SEMESTER, ANNUAL
+  status               String                @default("DRAFT") // DRAFT, ACTIVE, INACTIVE, ARCHIVED
+  createdBy            String?
+
+  // Relationships
+  sponsor      Sponsor               @relation(fields: [sponsorId], references: [id])
+  creator      User?                 @relation("ScholarshipCreator", fields: [createdBy], references: [id])
+  criteria     ScholarshipCriteria[]
+  applications Application[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sponsorId])
+  @@index([status])
+  @@index([applicationStartDate, applicationEndDate])
+  @@map("scholarships")
+}
+
+model ScholarshipCriteria {
+  id            String  @id @default(uuid())
+  scholarshipId String
+  criteriaType  String // MIN_GPA, NATIONALITY, GENDER, ACADEMIC_LEVEL, etc.
+  criteriaValue String // JSON string for different criteria
+  isMandatory   Boolean @default(true)
+
+  // Relationships
+  scholarship Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([scholarshipId])
+  @@index([criteriaType])
+  @@map("scholarship_criteria")
+}
+
+model Application {
+  id                String            @id @default(uuid())
+  applicationNumber String            @unique
+  userId            String
+  scholarshipId     String
+  status            String            @default("DRAFT") // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, WITHDRAWN
+  motivationLetter  String?
+  additionalInfo    String? // JSON string
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  decisionAt        DateTime?
+  decisionBy        String?
+  decisionNotes     String?
+  score             Float?
+
+  // Relationships
+  user         User                  @relation(fields: [userId], references: [id])
+  scholarship  Scholarship           @relation(fields: [scholarshipId], references: [id])
+  documents    ApplicationDocument[]
+  reviews      ApplicationReview[]
+  history      ApplicationHistory[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scholarshipId]) // Prevent duplicate applications
+  @@index([userId])
+  @@index([scholarshipId])
+  @@index([status])
+  @@index([submittedAt])
+  @@map("applications")
+}
+
+model Document {
+  id           String        @id @default(uuid())
+  userId       String
+  documentType String // TRANSCRIPT, RECOMMENDATION, FINANCIAL, IDENTITY, OTHER
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  checksum     String?
+  isVerified   Boolean       @default(false)
+  verifiedBy   String?
+  verifiedAt   DateTime?
+  expiryDate   DateTime?
+
+  // Relationships
+  user         User                  @relation(fields: [userId], references: [id])
+  applications ApplicationDocument[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([documentType])
+  @@index([isVerified])
+  @@map("documents")
+}
+
+model ApplicationDocument {
+  id            String  @id @default(uuid())
+  applicationId String
+  documentId    String
+  isRequired    Boolean @default(true)
+
+  // Relationships
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  document    Document    @relation(fields: [documentId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@unique([applicationId, documentId]) // Prevent duplicate links
+  @@index([applicationId])
+  @@map("application_documents")
+}
+
+model ApplicationReview {
+  id             String                @id @default(uuid())
+  applicationId  String
+  reviewerId     String
+  score          Float?
+  comments       String?
+  recommendation String? // APPROVE, REJECT, WAITLIST
+  reviewedAt     DateTime              @default(now())
+
+  // Relationships
+  application Application @relation(fields: [applicationId], references: [id])
+  reviewer    User        @relation(fields: [reviewerId], references: [id])
+
+  @@index([applicationId])
+  @@index([reviewerId])
+  @@map("application_reviews")
+}
+
+model ApplicationHistory {
+  id            String  @id @default(uuid())
+  applicationId String
+  action        String // CREATED, SUBMITTED, REVIEWED, APPROVED, etc.
+  performedBy   String?
+  notes         String?
+  metadata      String? // JSON string
+
+  // Relationships
+  application Application @relation(fields: [applicationId], references: [id])
+  user        User?       @relation(fields: [performedBy], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([applicationId])
+  @@index([createdAt])
+  @@map("application_history")
+}
+
+model AuditLog {
+  id         String  @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValues  String? // JSON string
+  newValues  String? // JSON string
+  ipAddress  String?
+  userAgent  String?
+
+  // Relationships
+  user User? @relation(fields: [userId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
+}

@@ -1,7 +1,8 @@
 import Cookies from 'js-cookie'
 import { create } from 'zustand'
+import { authAPI } from '@/lib/api'
 
-const ACCESS_TOKEN = 'thisisjustarandomstring'
+const ACCESS_TOKEN = 'auth_token'
 
 export type UserRole = 'STUDENT' | 'ADMIN' | 'SPONSOR'
 
@@ -15,6 +16,16 @@ interface AuthUser {
 }
 
 interface AuthState {
+  user: AuthUser | null
+  accessToken: string
+  setUser: (user: AuthUser | null) => void
+  setAccessToken: (accessToken: string) => void
+  resetAccessToken: () => void
+  reset: () => void
+  login: (email: string, password: string) => Promise<AuthUser | null>
+  register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<AuthUser | null>
+  logout: () => void
+  isAuthenticated: () => boolean
   auth: {
     user: AuthUser | null
     setUser: (user: AuthUser | null) => void
@@ -22,7 +33,9 @@ interface AuthState {
     setAccessToken: (accessToken: string) => void
     resetAccessToken: () => void
     reset: () => void
-    login: (email: string, password: string) => AuthUser | null
+    login: (email: string, password: string) => Promise<AuthUser | null>
+    register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<AuthUser | null>
+    logout: () => void
     isAuthenticated: () => boolean
   }
 }
@@ -35,82 +48,122 @@ export const useAuthStore = create<AuthState>()((set, get) => {
   const savedUser = localStorage.getItem('user')
   const initUser = savedUser ? JSON.parse(savedUser) : null
   
+  const setUserHandler = (user: AuthUser | null) => {
+    set((state) => {
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user))
+      } else {
+        localStorage.removeItem('user')
+      }
+      return { ...state, user, auth: { ...state.auth, user } }
+    })
+  }
+
+  const setAccessTokenHandler = (accessToken: string) => {
+    set((state) => {
+      Cookies.set(ACCESS_TOKEN, JSON.stringify(accessToken))
+      return { ...state, accessToken, auth: { ...state.auth, accessToken } }
+    })
+  }
+
+  const resetAccessTokenHandler = () => {
+    set((state) => {
+      Cookies.remove(ACCESS_TOKEN)
+      return { ...state, accessToken: '', auth: { ...state.auth, accessToken: '' } }
+    })
+  }
+
+  const resetHandler = () => {
+    set((state) => {
+      Cookies.remove(ACCESS_TOKEN)
+      localStorage.removeItem('user')
+      return {
+        ...state,
+        user: null,
+        accessToken: '',
+        auth: { ...state.auth, user: null, accessToken: '' },
+      }
+    })
+  }
+
+  const loginHandler = async (email: string, password: string) => {
+    try {
+      const response = await authAPI.login(email, password)
+      
+      const user: AuthUser = {
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role as UserRole,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        profilePicture: undefined
+      }
+      
+      setUserHandler(user)
+      setAccessTokenHandler(response.access_token)
+      
+      return user
+    } catch (error) {
+      console.error('Login failed:', error)
+      return null
+    }
+  }
+
+  const registerHandler = async (data: { email: string; password: string; firstName: string; lastName: string }) => {
+    try {
+      const response = await authAPI.register(data)
+      
+      const user: AuthUser = {
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role as UserRole,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        profilePicture: undefined
+      }
+      
+      setUserHandler(user)
+      setAccessTokenHandler(response.access_token)
+      
+      return user
+    } catch (error) {
+      console.error('Registration failed:', error)
+      return null
+    }
+  }
+
+  const logoutHandler = () => {
+    authAPI.logout()
+    resetHandler()
+  }
+
+  const isAuthenticatedHandler = () => {
+    const state = get()
+    return !!state.user && !!state.accessToken
+  }
+
   return {
+    user: initUser,
+    accessToken: initToken,
+    setUser: setUserHandler,
+    setAccessToken: setAccessTokenHandler,
+    resetAccessToken: resetAccessTokenHandler,
+    reset: resetHandler,
+    login: loginHandler,
+    register: registerHandler,
+    logout: logoutHandler,
+    isAuthenticated: isAuthenticatedHandler,
     auth: {
       user: initUser,
-      setUser: (user) =>
-        set((state) => {
-          if (user) {
-            localStorage.setItem('user', JSON.stringify(user))
-          } else {
-            localStorage.removeItem('user')
-          }
-          return { ...state, auth: { ...state.auth, user } }
-        }),
+      setUser: setUserHandler,
       accessToken: initToken,
-      setAccessToken: (accessToken) =>
-        set((state) => {
-          Cookies.set(ACCESS_TOKEN, JSON.stringify(accessToken))
-          return { ...state, auth: { ...state.auth, accessToken } }
-        }),
-      resetAccessToken: () =>
-        set((state) => {
-          Cookies.remove(ACCESS_TOKEN)
-          return { ...state, auth: { ...state.auth, accessToken: '' } }
-        }),
-      reset: () =>
-        set((state) => {
-          Cookies.remove(ACCESS_TOKEN)
-          localStorage.removeItem('user')
-          return {
-            ...state,
-            auth: { ...state.auth, user: null, accessToken: '' },
-          }
-        }),
-      login: (email: string, password: string) => {
-        // Mock login based on email pattern
-        let role: UserRole = 'STUDENT'
-        let firstName = ''
-        let lastName = ''
-        
-        if (email.toLowerCase().includes('admin@')) {
-          role = 'ADMIN'
-          firstName = 'Admin'
-          lastName = 'User'
-        } else if (email.toLowerCase().includes('sponsor@')) {
-          role = 'SPONSOR'
-          firstName = 'Sponsor'
-          lastName = 'Organization'
-        } else if (email.toLowerCase().includes('student@')) {
-          role = 'STUDENT'
-          firstName = 'Student'
-          lastName = 'User'
-        } else {
-          // Default to student for any other email
-          role = 'STUDENT'
-          const emailParts = email.split('@')[0].split('.')
-          firstName = emailParts[0] || 'User'
-          lastName = emailParts[1] || 'Account'
-        }
-        
-        const user: AuthUser = {
-          id: Math.random().toString(36).substr(2, 9),
-          email,
-          role,
-          firstName,
-          lastName,
-          profilePicture: undefined
-        }
-        
-        get().auth.setUser(user)
-        get().auth.setAccessToken('mock-token-' + role.toLowerCase())
-        
-        return user
-      },
-      isAuthenticated: () => {
-        const state = get()
-        return !!state.auth.user && !!state.auth.accessToken
-      }
+      setAccessToken: setAccessTokenHandler,
+      resetAccessToken: resetAccessTokenHandler,
+      reset: resetHandler,
+      login: loginHandler,
+      register: registerHandler,
+      logout: logoutHandler,
+      isAuthenticated: isAuthenticatedHandler,
     },
   }
 })

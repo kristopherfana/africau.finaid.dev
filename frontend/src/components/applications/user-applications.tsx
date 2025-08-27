@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { useUser } from '@clerk/clerk-react'
-import { Calendar, DollarSign, FileText } from 'lucide-react'
+import { useAuthStore } from '@/stores/authStore'
+import { Calendar, DollarSign, FileText, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 
 const statusColors = {
@@ -17,7 +17,7 @@ const statusColors = {
 }
 
 export function UserApplications() {
-  const { user } = useUser()
+  const { user } = useAuthStore()
   const { data, isLoading, error } = useUserApplications(user?.id || '')
   const withdrawApplication = useWithdrawApplication()
 
@@ -56,94 +56,143 @@ export function UserApplications() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Your Applications</h2>
-        <Badge variant="outline">
-          {data.data.length} {data.data.length === 1 ? 'Application' : 'Applications'}
-        </Badge>
+    <div className="space-y-8">
+      {/* Applications Summary */}
+      <div className="au-card">
+        <div className="p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Your Applications</h2>
+              <p className="text-gray-600 mt-1">Track the progress of all your scholarship applications</p>
+            </div>
+            <span className="au-badge au-badge-info text-lg px-4 py-2">
+              {data.data.length} {data.data.length === 1 ? 'Application' : 'Applications'}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-6">
+      {/* Applications List */}
+      <div className="space-y-6">
         {data.data.map((application) => (
-          <Card key={application.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">
+          <div key={application.id} className="au-card hover:shadow-lg transition-shadow">
+            <div className="p-6">
+              {/* Application Header */}
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-800 mb-1">
                     {application.scholarship.title}
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  </h3>
+                  <p className="text-sm text-gray-500">
                     Application #{application.applicationNumber}
                   </p>
                 </div>
-                <Badge className={statusColors[application.status as keyof typeof statusColors]}>
-                  {application.status.replace('_', ' ')}
-                </Badge>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span>${application.scholarship.amount.toLocaleString()}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>Applied: {new Date(application.submittedAt || application.createdAt).toLocaleDateString()}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>Deadline: {new Date(application.scholarship.applicationDeadline).toLocaleDateString()}</span>
+                <div className="flex items-center space-x-2">
+                  {application.status === 'DRAFT' && <span className="au-badge au-badge-neutral">Draft</span>}
+                  {application.status === 'SUBMITTED' && <span className="au-badge au-badge-info">Submitted</span>}
+                  {application.status === 'UNDER_REVIEW' && <span className="au-badge au-badge-warning">Under Review</span>}
+                  {application.status === 'APPROVED' && <span className="au-badge au-badge-success">Approved</span>}
+                  {application.status === 'REJECTED' && <span className="au-badge au-badge-danger">Rejected</span>}
+                  {application.status === 'WITHDRAWN' && <span className="au-badge au-badge-neutral">Withdrawn</span>}
                 </div>
               </div>
 
+              {/* Application Details Grid */}
+              <div className="au-grid au-grid-3 mb-4">
+                <div className="flex items-center space-x-2 text-sm">
+                  <DollarSign className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Award Amount:</span>
+                  <span className="font-bold text-green-600">${application.scholarship.amount.toLocaleString()}</span>
+                </div>
+                
+                <div className="flex items-center space-x-2 text-sm">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Applied:</span>
+                  <span className="text-gray-700">{new Date(application.submittedAt || application.createdAt).toLocaleDateString()}</span>
+                </div>
+                
+                <div className="flex items-center space-x-2 text-sm">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Deadline:</span>
+                  <span className="text-gray-700">{new Date(application.scholarship.applicationDeadline).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              {/* Status-specific messages */}
               {application.status === 'APPROVED' && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
-                    🎉 Congratulations! Your application has been approved.
-                  </p>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
+                  <div className="flex items-start space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-green-800 font-medium">
+                        🎉 Congratulations! Your application has been approved.
+                      </p>
+                      <p className="text-xs text-green-700 mt-1">
+                        You will receive further instructions via email regarding award disbursement.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {application.status === 'REJECTED' && application.decisionNotes && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800 font-medium mb-1">Decision Notes:</p>
-                  <p className="text-sm text-red-700">{application.decisionNotes}</p>
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+                  <div className="flex items-start space-x-2">
+                    <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-red-800 font-medium mb-1">Decision Notes:</p>
+                      <p className="text-sm text-red-700">{application.decisionNotes}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {application.status === 'UNDER_REVIEW' && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+                  <div className="flex items-start space-x-2">
+                    <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-yellow-800 font-medium">
+                        Your application is currently under review.
+                      </p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        We'll notify you once a decision has been made. This typically takes 2-4 weeks.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {application.score && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-medium">Score:</span>
-                  <Badge variant="outline">{application.score}/100</Badge>
+                <div className="flex items-center space-x-2 text-sm mb-4">
+                  <span className="font-medium text-gray-700">Application Score:</span>
+                  <span className="au-badge au-badge-info">{application.score}/100</span>
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <button className="au-btn-secondary px-4 py-2 text-sm rounded-md font-semibold transition-all duration-200 flex items-center">
+                  <FileText className="w-4 h-4 mr-2" />
                   View Details
-                </Button>
+                </button>
                 
                 {(application.status === 'SUBMITTED' || application.status === 'UNDER_REVIEW') && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
+                      <button 
                         disabled={withdrawApplication.isPending}
+                        className="py-2 px-4 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors duration-200 flex items-center text-sm"
                       >
+                        <XCircle className="w-4 h-4 mr-2" />
                         Withdraw
-                      </Button>
+                      </button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Withdraw Application</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to withdraw this application? This action cannot be undone.
+                          Are you sure you want to withdraw this application? This action cannot be undone and you will not be able to reapply for this scholarship.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -159,15 +208,15 @@ export function UserApplications() {
                   </AlertDialog>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Pagination */}
-      {data?.pagination && data.pagination.totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <span className="text-sm text-muted-foreground">
+      {/* Summary Stats */}
+      {data?.pagination && data.pagination.total > data.data.length && (
+        <div className="text-center">
+          <span className="text-sm text-gray-500">
             Showing {data.data.length} of {data.pagination.total} applications
           </span>
         </div>

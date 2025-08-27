@@ -2,7 +2,6 @@ import { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { ClerkProvider } from '@clerk/clerk-react'
 import { Toaster } from '@/components/ui/sonner'
 import { NavigationProgress } from '@/components/navigation-progress'
 import GeneralError from '@/features/errors/general-error'
@@ -12,14 +11,8 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   component: () => {
-    const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-    
-    if (!clerkPubKey) {
-      throw new Error('Missing Clerk Publishable Key')
-    }
-    
     return (
-      <ClerkProvider publishableKey={clerkPubKey}>
+      <>
         <NavigationProgress />
         <Outlet />
         <Toaster duration={50000} />
@@ -29,7 +22,7 @@ export const Route = createRootRouteWithContext<{
             <TanStackRouterDevtools position='bottom-right' />
           </>
         )}
-      </ClerkProvider>
+      </>
     )
   },
   notFoundComponent: NotFoundError,

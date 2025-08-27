@@ -1,105 +1,68 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, UserRole } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  // Mock data - replace with actual database implementation
-  private users: UserResponseDto[] = [
-    {
-      id: 'current-user-id',
-      email: 'john.doe@africau.edu',
-      firstName: 'John',
-      lastName: 'Doe',
-      phoneNumber: '+263771234567',
-      studentId: 'ST2024001',
-      role: UserRole.STUDENT,
-      department: 'Computer Science',
-      yearOfStudy: 3,
-      gpa: 3.75,
-      isActive: true,
-      emailVerified: true,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-15'),
-    },
-    {
-      id: '2',
-      email: 'jane.smith@africau.edu',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      phoneNumber: '+263771234568',
-      studentId: 'ST2024002',
-      role: UserRole.STUDENT,
-      department: 'Engineering',
-      yearOfStudy: 2,
-      gpa: 3.85,
-      isActive: true,
-      emailVerified: true,
-      createdAt: new Date('2024-01-02'),
-      updatedAt: new Date('2024-01-16'),
-    },
-    {
-      id: '3',
-      email: 'admin@africau.edu',
-      firstName: 'Admin',
-      lastName: 'User',
-      role: UserRole.ADMIN,
-      department: 'Administration',
-      isActive: true,
-      emailVerified: true,
-      createdAt: new Date('2023-12-01'),
-      updatedAt: new Date('2024-01-10'),
-    },
-    {
-      id: '4',
-      email: 'sponsor@example.com',
-      firstName: 'Corporate',
-      lastName: 'Sponsor',
-      role: UserRole.SPONSOR,
-      isActive: true,
-      emailVerified: true,
-      createdAt: new Date('2023-11-15'),
-      updatedAt: new Date('2024-01-05'),
-    },
-  ];
+  constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // Check if user already exists
-    const existingUser = this.users.find(user => user.email === createUserDto.email);
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: createUserDto.email },
+    });
+    
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
 
     // Check if student ID already exists (for students)
     if (createUserDto.studentId) {
-      const existingStudentId = this.users.find(user => user.studentId === createUserDto.studentId);
+      const existingStudentId = await this.prisma.user.findFirst({
+        where: {
+          profile: {
+            studentId: createUserDto.studentId,
+          },
+        },
+      });
+      
       if (existingStudentId) {
         throw new ConflictException('Student ID already exists');
       }
     }
 
-    const newUser: UserResponseDto = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: createUserDto.email,
-      firstName: createUserDto.firstName,
-      lastName: createUserDto.lastName,
-      phoneNumber: createUserDto.phoneNumber,
-      gender: createUserDto.gender,
-      dateOfBirth: createUserDto.dateOfBirth,
-      studentId: createUserDto.studentId,
-      role: createUserDto.role,
-      department: createUserDto.department,
-      yearOfStudy: createUserDto.yearOfStudy,
-      gpa: createUserDto.gpa,
-      isActive: true,
-      emailVerified: false, // Default to false, requires email verification
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    // Hash password if provided
+    let hashedPassword: string | undefined;
+    if ((createUserDto as any).password) {
+      hashedPassword = await bcrypt.hash((createUserDto as any).password, 10);
+    }
 
-    this.users.push(newUser);
-    return newUser;
+    const user = await this.prisma.user.create({
+      data: {
+        email: createUserDto.email,
+        password: hashedPassword,
+        role: createUserDto.role,
+        profile: {
+          create: {
+            firstName: createUserDto.firstName,
+            lastName: createUserDto.lastName,
+            phone: createUserDto.phoneNumber,
+            gender: createUserDto.gender,
+            dateOfBirth: createUserDto.dateOfBirth,
+            studentId: createUserDto.studentId,
+            program: createUserDto.department,
+            yearOfStudy: createUserDto.yearOfStudy,
+            gpa: createUserDto.gpa,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+
+    return this.mapToUserResponse(user);
   }
 
   async findAll(filters: {
@@ -110,169 +73,261 @@ export class UsersService {
     page?: number;
     limit?: number;
   }): Promise<UserResponseDto[]> {
-    let filtered = [...this.users];
+    const where: any = {};
 
     // Apply filters
     if (filters.role) {
-      filtered = filtered.filter(user => user.role === filters.role);
-    }
-
-    if (filters.department) {
-      filtered = filtered.filter(user => user.department === filters.department);
+      where.role = filters.role;
     }
 
     if (filters.isActive !== undefined) {
-      filtered = filtered.filter(user => user.isActive === filters.isActive);
+      where.isActive = filters.isActive;
     }
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(user =>
-        user.firstName.toLowerCase().includes(searchLower) ||
-        user.lastName.toLowerCase().includes(searchLower) ||
-        user.email.toLowerCase().includes(searchLower)
-      );
+      where.OR = [
+        { profile: { firstName: { contains: searchLower } } },
+        { profile: { lastName: { contains: searchLower } } },
+        { email: { contains: searchLower } },
+      ];
     }
 
-    // Sort by creation date (newest first)
-    filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    // Apply pagination
-    if (filters.page && filters.limit) {
-      const startIndex = (filters.page - 1) * filters.limit;
-      filtered = filtered.slice(startIndex, startIndex + filters.limit);
+    if (filters.department) {
+      where.profile = {
+        ...where.profile,
+        program: { contains: filters.department },
+      };
     }
 
-    return filtered;
+    const skip = filters.page && filters.limit ? (filters.page - 1) * filters.limit : undefined;
+    const take = filters.limit || undefined;
+
+    const users = await this.prisma.user.findMany({
+      where,
+      include: { profile: true },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    });
+
+    return users.map(user => this.mapToUserResponse(user));
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
-    const user = this.users.find(user => user.id === id);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { profile: true },
+    });
+    
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return user;
+    
+    return this.mapToUserResponse(user);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
-    const userIndex = this.users.findIndex(user => user.id === id);
-    if (userIndex === -1) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { profile: true },
+    });
+    
+    if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Email cannot be updated through this method since it's omitted from UpdateUserDto
-
     // Check for student ID conflicts if student ID is being updated
-    if (updateUserDto.studentId && updateUserDto.studentId !== this.users[userIndex].studentId) {
-      const studentIdExists = this.users.find(user => user.studentId === updateUserDto.studentId && user.id !== id);
+    if (updateUserDto.studentId && updateUserDto.studentId !== user.profile?.studentId) {
+      const studentIdExists = await this.prisma.user.findFirst({
+        where: {
+          profile: {
+            studentId: updateUserDto.studentId,
+          },
+          NOT: { id },
+        },
+      });
+      
       if (studentIdExists) {
         throw new ConflictException('Student ID already exists');
       }
     }
 
-    this.users[userIndex] = {
-      ...this.users[userIndex],
-      ...updateUserDto,
-      updatedAt: new Date(),
-    };
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        profile: {
+          update: {
+            firstName: updateUserDto.firstName,
+            lastName: updateUserDto.lastName,
+            phone: updateUserDto.phoneNumber,
+            gender: updateUserDto.gender,
+            dateOfBirth: updateUserDto.dateOfBirth,
+            studentId: updateUserDto.studentId,
+            program: updateUserDto.department,
+            yearOfStudy: updateUserDto.yearOfStudy,
+            gpa: updateUserDto.gpa,
+          },
+        },
+      },
+      include: { profile: true },
+    });
 
-    return this.users[userIndex];
+    return this.mapToUserResponse(updatedUser);
   }
 
   async activate(id: string): Promise<UserResponseDto> {
-    const userIndex = this.users.findIndex(user => user.id === id);
-    if (userIndex === -1) {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { isActive: true },
+      include: { profile: true },
+    });
+
+    if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    this.users[userIndex].isActive = true;
-    this.users[userIndex].updatedAt = new Date();
-
-    return this.users[userIndex];
+    return this.mapToUserResponse(user);
   }
 
   async deactivate(id: string): Promise<UserResponseDto> {
-    const userIndex = this.users.findIndex(user => user.id === id);
-    if (userIndex === -1) {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      include: { profile: true },
+    });
+
+    if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    this.users[userIndex].isActive = false;
-    this.users[userIndex].updatedAt = new Date();
-
-    return this.users[userIndex];
+    return this.mapToUserResponse(user);
   }
 
   async verifyEmail(id: string): Promise<UserResponseDto> {
-    const userIndex = this.users.findIndex(user => user.id === id);
-    if (userIndex === -1) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    this.users[userIndex].emailVerified = true;
-    this.users[userIndex].updatedAt = new Date();
-
-    return this.users[userIndex];
+    // For now, we'll just return the user as email verification is not implemented
+    const user = await this.findOne(id);
+    return user;
   }
 
   async changePassword(
     id: string,
     passwordData: { currentPassword: string; newPassword: string }
   ): Promise<{ message: string }> {
-    const user = await this.findOne(id);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
 
-    // In real implementation, verify current password hash
-    if (!passwordData.currentPassword || !passwordData.newPassword) {
-      throw new BadRequestException('Both current and new passwords are required');
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    if (!user.password) {
+      throw new BadRequestException('User does not have a password set');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(passwordData.currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
     }
 
     if (passwordData.newPassword.length < 6) {
       throw new BadRequestException('New password must be at least 6 characters long');
     }
 
-    // In real implementation, hash and store new password
-    // For mock purposes, just return success message
-    
+    // Hash and update new password
+    const hashedNewPassword = await bcrypt.hash(passwordData.newPassword, 10);
+    await this.prisma.user.update({
+      where: { id },
+      data: { password: hashedNewPassword },
+    });
+
     return { message: 'Password changed successfully' };
   }
 
   async remove(id: string): Promise<void> {
-    const userIndex = this.users.findIndex(user => user.id === id);
-    if (userIndex === -1) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // In real implementation, consider soft delete or check for dependencies
-    this.users.splice(userIndex, 1);
+    // Delete the user (this will cascade to delete the profile)
+    await this.prisma.user.delete({
+      where: { id },
+    });
   }
 
   async getStatistics() {
-    const totalUsers = this.users.length;
-    const activeUsers = this.users.filter(user => user.isActive).length;
-    
-    // Calculate users by role
-    const byRole = {
-      STUDENT: this.users.filter(user => user.role === UserRole.STUDENT).length,
-      ADMIN: this.users.filter(user => user.role === UserRole.ADMIN).length,
-      SPONSOR: this.users.filter(user => user.role === UserRole.SPONSOR).length,
-      REVIEWER: this.users.filter(user => user.role === UserRole.REVIEWER).length,
-    };
+    const totalUsers = await this.prisma.user.count();
+    const activeUsers = await this.prisma.user.count({
+      where: { isActive: true },
+    });
 
-    // Calculate new users this month (mock)
+    // Calculate users by role
+    const studentCount = await this.prisma.user.count({
+      where: { role: UserRole.STUDENT },
+    });
+    const adminCount = await this.prisma.user.count({
+      where: { role: UserRole.ADMIN },
+    });
+    const sponsorCount = await this.prisma.user.count({
+      where: { role: UserRole.SPONSOR },
+    });
+    const reviewerCount = await this.prisma.user.count({
+      where: { role: UserRole.REVIEWER },
+    });
+
+    // Calculate new users this month
     const thisMonth = new Date();
     thisMonth.setDate(1);
-    const newUsersThisMonth = this.users.filter(user => 
-      user.createdAt >= thisMonth
-    ).length;
+    thisMonth.setHours(0, 0, 0, 0);
+    
+    const newUsersThisMonth = await this.prisma.user.count({
+      where: {
+        createdAt: {
+          gte: thisMonth,
+        },
+      },
+    });
 
     return {
       totalUsers,
       activeUsers,
       inactiveUsers: totalUsers - activeUsers,
-      byRole,
+      byRole: {
+        STUDENT: studentCount,
+        ADMIN: adminCount,
+        SPONSOR: sponsorCount,
+        REVIEWER: reviewerCount,
+      },
       newUsersThisMonth,
-      verifiedUsers: this.users.filter(user => user.emailVerified).length,
-      unverifiedUsers: this.users.filter(user => !user.emailVerified).length,
+      verifiedUsers: totalUsers, // For now, assume all users are verified
+      unverifiedUsers: 0,
+    };
+  }
+
+  private mapToUserResponse(user: any): UserResponseDto {
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.profile?.firstName || '',
+      lastName: user.profile?.lastName || '',
+      phoneNumber: user.profile?.phone || undefined,
+      gender: user.profile?.gender || undefined,
+      dateOfBirth: user.profile?.dateOfBirth || undefined,
+      studentId: user.profile?.studentId || undefined,
+      role: user.role as UserRole,
+      department: user.profile?.program || undefined,
+      yearOfStudy: user.profile?.yearOfStudy || undefined,
+      gpa: user.profile?.gpa || undefined,
+      isActive: user.isActive,
+      emailVerified: true, // For now, assume all users are verified
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 }

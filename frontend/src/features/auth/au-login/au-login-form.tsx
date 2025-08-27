@@ -44,8 +44,7 @@ export function AULoginForm({ className, ...props }: UserAuthFormProps) {
     setIsLoading(true)
     
     try {
-      // Mock authentication - accept any password for demo
-      const user = login(data.email, data.password)
+      const user = await login(data.email, data.password)
       
       if (user) {
         toast.success(`Welcome back, ${user.firstName}!`)
@@ -61,10 +60,11 @@ export function AULoginForm({ className, ...props }: UserAuthFormProps) {
           }
         }, 500)
       } else {
-        toast.error('Invalid credentials')
+        toast.error('Invalid email or password')
       }
-    } catch (error) {
-      toast.error('An error occurred during login')
+    } catch (error: any) {
+      const errorMessage = error?.message || 'An error occurred during login'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

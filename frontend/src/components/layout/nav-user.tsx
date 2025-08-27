@@ -36,11 +36,11 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const { reset } = useAuth()
+  const { logout } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    reset()
+    logout()
     toast.success('Logged out successfully')
     navigate({ to: '/sign-in' })
   }

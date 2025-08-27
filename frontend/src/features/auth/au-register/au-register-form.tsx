@@ -33,7 +33,7 @@ const formSchema = z.object({
 
 export function AURegisterForm({ className, ...props }: RegisterFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const { register: registerUser } = useAuth()
   const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -51,22 +51,25 @@ export function AURegisterForm({ className, ...props }: RegisterFormProps) {
     setIsLoading(true)
     
     try {
-      // Mock registration - In real app, this would call an API
-      setTimeout(() => {
-        // Auto-login after registration
-        const user = login(data.email, data.password)
+      const user = await registerUser({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      })
+      
+      if (user) {
+        toast.success('Registration successful! Welcome to Africa University Scholarship Portal')
         
-        if (user) {
-          toast.success('Registration successful! Welcome to Africa University Scholarship Portal')
-          
-          // Navigate to scholarships page
-          navigate({ to: '/scholarships' })
-        }
-        
-        setIsLoading(false)
-      }, 1500)
-    } catch (error) {
-      toast.error('An error occurred during registration')
+        // Navigate to scholarships page
+        navigate({ to: '/scholarships' })
+      } else {
+        toast.error('Registration failed. Please try again.')
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'An error occurred during registration'
+      toast.error(errorMessage)
+    } finally {
       setIsLoading(false)
     }
   }
