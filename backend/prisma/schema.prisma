@@ -41,9 +41,10 @@ model User {
   @@map("users")
 }
 
+// Base profile with common fields for all users
 model Profile {
-  id          String         @id @default(uuid())
-  userId      String         @unique
+  id          String   @id @default(uuid())
+  userId      String   @unique
   firstName   String
   lastName    String
   dateOfBirth DateTime?
@@ -51,15 +52,36 @@ model Profile {
   nationality String?
   phone       String?
   address     String?
-  studentId   String?        @unique
-  program     String?
-  level       String? // UNDERGRADUATE, MASTERS, PHD
-  yearOfStudy Int?
-  gpa         Float?
   profilePicture String?
 
   // Relationships
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile?
+  reviewerProfile ReviewerProfile?
+  adminProfile   AdminProfile?
+  sponsorProfile SponsorProfile?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// Student-specific profile data
+model StudentProfile {
+  id          String  @id @default(uuid())
+  profileId   String  @unique
+  studentId   String  @unique
+  program     String
+  level       String  // UNDERGRADUATE, MASTERS, PHD
+  yearOfStudy Int
+  gpa         Float?
+  institution String?
+  expectedGraduation DateTime?
+
+  // Relationships
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -67,7 +89,74 @@ model Profile {
 
   @@index([studentId])
   @@index([level])
-  @@map("profiles")
+  @@index([program])
+  @@map("student_profiles")
+}
+
+// Reviewer-specific profile data
+model ReviewerProfile {
+  id               String   @id @default(uuid())
+  profileId        String   @unique
+  expertiseAreas   String   // JSON array of expertise areas
+  department       String?
+  yearsExperience  Int?
+  certifications   String?  // JSON array of certifications
+  reviewQuota      Int      @default(10)
+  isActive         Boolean  @default(true)
+
+  // Relationships
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([department])
+  @@index([isActive])
+  @@map("reviewer_profiles")
+}
+
+// Admin-specific profile data
+model AdminProfile {
+  id                  String   @id @default(uuid())
+  profileId           String   @unique
+  permissions         String   // JSON array of permissions
+  managedDepartments  String?  // JSON array of departments
+  accessLevel         String   @default("STANDARD") // STANDARD, SUPER_ADMIN
+  lastLogin          DateTime?
+
+  // Relationships
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accessLevel])
+  @@map("admin_profiles")
+}
+
+// Individual sponsor profile data (for personal sponsors)
+model SponsorProfile {
+  id                String   @id @default(uuid())
+  profileId         String   @unique
+  organizationName  String?
+  position          String?
+  sponsorType       String   @default("INDIVIDUAL") // INDIVIDUAL, ORGANIZATION
+  totalContributed  Float    @default(0)
+  preferredCauses   String?  // JSON array of preferred scholarship types
+  isVerified        Boolean  @default(false)
+
+  // Relationships
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sponsorType])
+  @@index([isVerified])
+  @@map("sponsor_profiles")
 }
 
 model Sponsor {

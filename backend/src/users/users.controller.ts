@@ -66,16 +66,16 @@ export class UsersController {
     @Query('department') department?: string,
     @Query('isActive') isActive?: boolean,
     @Query('search') search?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ): Promise<UserResponseDto[]> {
     return this.usersService.findAll({
       role,
       department,
       isActive,
       search,
-      page,
-      limit,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
     });
   }
 

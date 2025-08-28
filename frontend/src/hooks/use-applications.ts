@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ApplicationService, type ApplicationFilters, type CreateApplicationData } from '@/lib/api/applications'
+import { applicationsAPI } from '@/lib/api'
+import type { ApplicationFilters, CreateApplicationData, UpdateApplicationData } from '@/types/application'
 import { scholarshipKeys } from './use-scholarships'
 
 // Query Keys
@@ -19,7 +20,7 @@ export const applicationKeys = {
 export function useUserApplications(userId: string, filters: ApplicationFilters = {}) {
   return useQuery({
     queryKey: applicationKeys.list({ ...filters, userId }),
-    queryFn: () => ApplicationService.getUserApplications(userId, filters),
+    queryFn: () => applicationsAPI.getAll({ ...filters, userId }),
     enabled: !!userId,
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
@@ -31,7 +32,7 @@ export function useUserApplications(userId: string, filters: ApplicationFilters 
 export function useApplication(id: string) {
   return useQuery({
     queryKey: applicationKeys.detail(id),
-    queryFn: () => ApplicationService.getApplicationById(id),
+    queryFn: () => applicationsAPI.getById(id),
     enabled: !!id,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
@@ -43,7 +44,7 @@ export function useApplication(id: string) {
 export function useApplicationsForReview(filters: ApplicationFilters = {}) {
   return useQuery({
     queryKey: [...applicationKeys.adminReview(), filters],
-    queryFn: () => ApplicationService.getApplicationsForReview(filters),
+    queryFn: () => applicationsAPI.getAll(filters),
     staleTime: 1000 * 30, // 30 seconds (more frequent updates for admin)
   })
 }
@@ -58,7 +59,7 @@ export function useCreateApplication() {
     mutationFn: ({ userId, applicationData }: { 
       userId: string; 
       applicationData: CreateApplicationData 
-    }) => ApplicationService.createApplication(userId, applicationData),
+    }) => applicationsAPI.create(applicationData),
     onSuccess: (data, variables) => {
       // Invalidate user applications
       queryClient.invalidateQueries({ 
@@ -90,8 +91,8 @@ export function useUpdateApplication() {
   return useMutation({
     mutationFn: ({ id, updates }: { 
       id: string; 
-      updates: Partial<CreateApplicationData> 
-    }) => ApplicationService.updateApplication(id, updates),
+      updates: UpdateApplicationData 
+    }) => applicationsAPI.update(id, updates),
     onSuccess: (data) => {
       // Update the specific application
       queryClient.setQueryData(applicationKeys.detail(data.id), data)
@@ -112,7 +113,7 @@ export function useWithdrawApplication() {
   
   return useMutation({
     mutationFn: ({ id, userId }: { id: string; userId: string }) => 
-      ApplicationService.withdrawApplication(id, userId),
+      applicationsAPI.withdraw(id),
     onSuccess: (data, variables) => {
       // Update the specific application
       queryClient.setQueryData(applicationKeys.detail(data.id), data)
@@ -144,7 +145,7 @@ export function useUpdateApplicationStatus() {
       adminId: string
       decisionNotes?: string
       score?: number
-    }) => ApplicationService.updateApplicationStatus(id, status, adminId, decisionNotes, score),
+    }) => applicationsAPI.updateStatus(id, { status, reason: decisionNotes }),
     onSuccess: (data) => {
       // Update the specific application
       queryClient.setQueryData(applicationKeys.detail(data.id), data)
@@ -162,40 +163,3 @@ export function useUpdateApplicationStatus() {
   })
 }
 
-/**
- * Hook for real-time application updates (using Supabase subscriptions)
- */
-export function useApplicationSubscription(applicationId: string) {
-  const queryClient = useQueryClient()
-  
-  return useQuery({
-    queryKey: ['application-subscription', applicationId],
-    queryFn: async () => {
-      // Set up Supabase real-time subscription
-      const { supabase } = await import('@/lib/supabase')
-      
-      const subscription = supabase
-        .channel(`application-${applicationId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'applications',
-            filter: `id=eq.${applicationId}`,
-          },
-          (payload) => {
-            // Update the application data when it changes
-            queryClient.invalidateQueries({ 
-              queryKey: applicationKeys.detail(applicationId) 
-            })
-          }
-        )
-        .subscribe()
-      
-      return subscription
-    },
-    enabled: !!applicationId,
-    staleTime: Infinity, // Don't refetch, just maintain subscription
-  })
-}

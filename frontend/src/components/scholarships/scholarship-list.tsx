@@ -1,12 +1,14 @@
-import { useScholarships } from '@/hooks/use-scholarships'
-import { ScholarshipCard } from './scholarship-card'
-import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import React from 'react';
+import { ScholarshipCard } from './scholarship-card'
+import type { ScholarshipFilters } from '@/types/scholarship'
+import { useScholarships } from '@/hooks/use-scholarships'
 import { useState } from 'react'
 
 export function ScholarshipList() {
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ScholarshipFilters>({
     search: '',
     category: '',
     level: '',

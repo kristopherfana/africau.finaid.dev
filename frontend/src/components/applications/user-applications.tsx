@@ -1,11 +1,9 @@
-import { useUserApplications, useWithdrawApplication } from '@/hooks/use-applications'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { useAuthStore } from '@/stores/authStore'
-import { Calendar, DollarSign, FileText, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Calendar, CheckCircle, Clock, DollarSign, FileText, XCircle } from 'lucide-react'
+import { useUserApplications, useWithdrawApplication } from '@/hooks/use-applications'
+
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/authStore'
 
 const statusColors = {
   DRAFT: 'bg-gray-100 text-gray-800',

@@ -43,6 +43,16 @@ export class TestUtils {
     }
     
     try {
+      // Clean role-specific profiles first
+      await prisma.studentProfile.deleteMany();
+      await prisma.reviewerProfile.deleteMany();
+      await prisma.adminProfile.deleteMany();
+      await prisma.sponsorProfile.deleteMany();
+    } catch (e) {
+      console.log('Role-specific profile tables not found, skipping...');
+    }
+    
+    try {
       await prisma.profile.deleteMany();
     } catch (e) {
       console.log('Profile table not found, skipping...');
@@ -68,7 +78,7 @@ export class TestUtils {
       password: string;
       firstName: string;
       lastName: string;
-      role: 'STUDENT' | 'ADMIN' | 'SPONSOR';
+      role: 'STUDENT' | 'ADMIN' | 'SPONSOR' | 'REVIEWER';
     }
   ) {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -82,8 +92,8 @@ export class TestUtils {
       },
     });
 
-    // Create profile for all users
-    await prisma.profile.create({
+    // Create base profile for all users
+    const profile = await prisma.profile.create({
       data: {
         userId: user.id,
         firstName: userData.firstName,
@@ -93,17 +103,60 @@ export class TestUtils {
         nationality: 'Test Country',
         dateOfBirth: new Date('1995-01-01'),
         gender: 'MALE',
-        ...(userData.role === 'STUDENT' && {
+      },
+    });
+
+    // Create role-specific profile
+    if (userData.role === 'STUDENT') {
+      await prisma.studentProfile.create({
+        data: {
+          profileId: profile.id,
           studentId: `STU${Date.now()}`,
           program: 'Computer Science',
           level: 'UNDERGRADUATE',
           yearOfStudy: 2,
           gpa: 3.5,
-        }),
-      },
-    });
+          institution: 'Test University',
+          expectedGraduation: new Date('2025-06-01'),
+        },
+      });
+    } else if (userData.role === 'REVIEWER') {
+      await prisma.reviewerProfile.create({
+        data: {
+          profileId: profile.id,
+          expertiseAreas: JSON.stringify(['Computer Science', 'Software Engineering']),
+          department: 'Engineering',
+          yearsExperience: 5,
+          certifications: JSON.stringify(['PhD in Computer Science']),
+          reviewQuota: 10,
+          isActive: true,
+        },
+      });
+    } else if (userData.role === 'ADMIN') {
+      await prisma.adminProfile.create({
+        data: {
+          profileId: profile.id,
+          permissions: JSON.stringify(['USER_MANAGEMENT', 'SCHOLARSHIP_MANAGEMENT']),
+          managedDepartments: JSON.stringify(['Engineering', 'Computer Science']),
+          accessLevel: 'STANDARD',
+          lastLogin: new Date(),
+        },
+      });
+    } else if (userData.role === 'SPONSOR') {
+      await prisma.sponsorProfile.create({
+        data: {
+          profileId: profile.id,
+          organizationName: 'Test Organization',
+          position: 'Director',
+          sponsorType: 'ORGANIZATION',
+          totalContributed: 50000,
+          preferredCauses: JSON.stringify(['STEM', 'Education']),
+          isVerified: true,
+        },
+      });
+    }
 
-    // Create sponsor organization if user is a sponsor
+    // Create sponsor organization if user is a sponsor (keep existing logic)
     if (userData.role === 'SPONSOR') {
       await prisma.sponsor.create({
         data: {
@@ -133,18 +186,12 @@ export class TestUtils {
       applicationEndDate: Date;
     }>
   ) {
-    // Find sponsor organization (not by userId)
-    const sponsor = await prisma.sponsor.findFirst({
-      where: { 
-        email: {
-          contains: sponsorUserId.includes('@') ? sponsorUserId : undefined
-        }
-      },
-    });
+    // Find existing sponsor or create one
+    let sponsor = await prisma.sponsor.findFirst();
 
     if (!sponsor) {
       // Create a sponsor if none exists
-      const newSponsor = await prisma.sponsor.create({
+      sponsor = await prisma.sponsor.create({
         data: {
           name: 'Test Sponsor Org',
           type: 'ORGANIZATION',
@@ -154,26 +201,8 @@ export class TestUtils {
           address: 'Test Address',
         },
       });
-      
-      return await prisma.scholarship.create({
-        data: {
-          sponsorId: newSponsor.id,
-          name: scholarshipData?.name || 'Test Scholarship',
-          description: scholarshipData?.description || 'Test scholarship description',
-          amount: scholarshipData?.amount || 10000,
-          currency: 'USD',
-          totalSlots: scholarshipData?.totalSlots || 5,
-          availableSlots: scholarshipData?.availableSlots || 5,
-          applicationStartDate: new Date(),
-          applicationEndDate: scholarshipData?.applicationEndDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          academicYear: '2025-2026',
-          durationMonths: 12,
-          disbursementSchedule: 'SEMESTER',
-          status: 'ACTIVE',
-        },
-      });
     }
-
+      
     return await prisma.scholarship.create({
       data: {
         sponsorId: sponsor.id,

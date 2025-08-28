@@ -201,13 +201,24 @@ PORT=3001
       });
       
       // Create admin profile
-      await prisma.profile.create({
+      const adminProfile = await prisma.profile.create({
         data: {
           userId: adminUser.id,
           firstName: 'Test',
           lastName: 'Admin',
           phone: '+1234567890',
           address: '123 Admin Street',
+        },
+      });
+
+      // Create admin-specific profile
+      await prisma.adminProfile.create({
+        data: {
+          profileId: adminProfile.id,
+          permissions: JSON.stringify(['USER_MANAGEMENT', 'SCHOLARSHIP_MANAGEMENT']),
+          managedDepartments: JSON.stringify(['Engineering', 'Computer Science']),
+          accessLevel: 'STANDARD',
+          lastLogin: new Date(),
         },
       });
       
@@ -234,13 +245,26 @@ PORT=3001
         },
       });
       
-      await prisma.profile.create({
+      const sponsorProfile = await prisma.profile.create({
         data: {
           userId: sponsorUser.id,
           firstName: 'Test',
           lastName: 'Sponsor',
           phone: '+1234567890',
           address: '123 Sponsor Street',
+        },
+      });
+
+      // Create sponsor-specific profile
+      await prisma.sponsorProfile.create({
+        data: {
+          profileId: sponsorProfile.id,
+          organizationName: 'Test Foundation',
+          position: 'Director',
+          sponsorType: 'ORGANIZATION',
+          totalContributed: 50000,
+          preferredCauses: JSON.stringify(['STEM', 'Education']),
+          isVerified: true,
         },
       });
       
@@ -254,7 +278,7 @@ PORT=3001
         },
       });
       
-      await prisma.profile.create({
+      const studentProfile = await prisma.profile.create({
         data: {
           userId: studentUser.id,
           firstName: 'Test',
@@ -264,11 +288,20 @@ PORT=3001
           dateOfBirth: new Date('2000-01-01'),
           gender: 'MALE',
           nationality: 'Test Country',
+        },
+      });
+
+      // Create student-specific profile
+      await prisma.studentProfile.create({
+        data: {
+          profileId: studentProfile.id,
           studentId: 'STU001',
           program: 'Computer Science',
           level: 'UNDERGRADUATE',
           yearOfStudy: 3,
           gpa: 3.5,
+          institution: 'Test University',
+          expectedGraduation: new Date('2025-06-01'),
         },
       });
       

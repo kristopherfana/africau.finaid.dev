@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ScholarshipService, type ScholarshipFilters } from '@/lib/api/scholarships'
+import { scholarshipsAPI, applicationsAPI } from '@/lib/api'
+import type { ScholarshipFilters } from '@/types/scholarship'
 
 // Query Keys
 export const scholarshipKeys = {
@@ -17,7 +18,7 @@ export const scholarshipKeys = {
 export function useScholarships(filters: ScholarshipFilters = {}) {
   return useQuery({
     queryKey: scholarshipKeys.list(filters),
-    queryFn: () => ScholarshipService.getScholarships(filters),
+    queryFn: () => scholarshipsAPI.getAll(filters),
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
@@ -28,7 +29,7 @@ export function useScholarships(filters: ScholarshipFilters = {}) {
 export function useActiveScholarships() {
   return useQuery({
     queryKey: scholarshipKeys.active(),
-    queryFn: () => ScholarshipService.getActiveScholarships(),
+    queryFn: () => scholarshipsAPI.getAll({ status: 'OPEN' }),
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
 }
@@ -39,7 +40,7 @@ export function useActiveScholarships() {
 export function useScholarship(id: string) {
   return useQuery({
     queryKey: scholarshipKeys.detail(id),
-    queryFn: () => ScholarshipService.getScholarshipById(id),
+    queryFn: () => scholarshipsAPI.getById(id),
     enabled: !!id,
     staleTime: 1000 * 60 * 10, // 10 minutes
   })
@@ -51,9 +52,20 @@ export function useScholarship(id: string) {
 export function useHasUserApplied(scholarshipId: string, userId?: string) {
   return useQuery({
     queryKey: ['scholarships', 'application-status', scholarshipId, userId],
-    queryFn: () => ScholarshipService.hasUserApplied(scholarshipId, userId!),
+    queryFn: async () => {
+      if (!scholarshipId || !userId) return false
+      
+      const applications = await applicationsAPI.getAll({ 
+        scholarshipId, 
+        applicantId: userId 
+      })
+      
+      // Check if user has any application for this scholarship
+      return Array.isArray(applications) && applications.length > 0
+    },
     enabled: !!scholarshipId && !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    select: (data) => Boolean(data), // Ensure we always return a boolean
   })
 }
 
@@ -64,7 +76,7 @@ export function useCreateScholarship() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ScholarshipService.createScholarship,
+    mutationFn: scholarshipsAPI.create,
     onSuccess: () => {
       // Invalidate and refetch scholarship lists
       queryClient.invalidateQueries({ queryKey: scholarshipKeys.lists() })
@@ -81,7 +93,7 @@ export function useUpdateScholarship() {
   
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: any }) => 
-      ScholarshipService.updateScholarship(id, updates),
+      scholarshipsAPI.update(id, updates),
     onSuccess: (data) => {
       // Invalidate lists and update the specific scholarship
       queryClient.invalidateQueries({ queryKey: scholarshipKeys.lists() })

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsDate, IsOptional, IsEnum, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsNumber, IsDate, IsOptional, IsEnum, Min, Max, IsDateString } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export enum ScholarshipStatus {
   OPEN = 'OPEN',
@@ -57,18 +57,42 @@ export class CreateScholarshipDto {
   type: ScholarshipType;
 
   @ApiProperty({
-    example: '2024-01-01',
-    description: 'Application start date',
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Application start date (ISO 8601 format, also accepts YYYY-MM-DD)',
+    type: 'string',
+    format: 'date-time'
   })
-  @Type(() => Date)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      // Handle YYYY-MM-DD format by adding time component
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return new Date(value + 'T00:00:00.000Z');
+      }
+      // Handle ISO format
+      return new Date(value);
+    }
+    return value;
+  })
   @IsDate()
   applicationStartDate: Date;
 
   @ApiProperty({
-    example: '2024-03-31',
-    description: 'Application deadline',
+    example: '2024-03-31T23:59:59.999Z',
+    description: 'Application deadline (ISO 8601 format, also accepts YYYY-MM-DD)',
+    type: 'string',
+    format: 'date-time'
   })
-  @Type(() => Date)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      // Handle YYYY-MM-DD format by adding end-of-day time component
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return new Date(value + 'T23:59:59.999Z');
+      }
+      // Handle ISO format
+      return new Date(value);
+    }
+    return value;
+  })
   @IsDate()
   applicationDeadline: Date;
 

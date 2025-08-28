@@ -56,10 +56,29 @@ export class ScholarshipsController {
   async findAll(
     @Query('status') status?: string,
     @Query('type') type?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ): Promise<ScholarshipResponseDto[]> {
-    return this.scholarshipsService.findAll({ status, type, page, limit });
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<{ data: ScholarshipResponseDto[], pagination: any }> {
+    const scholarships = await this.scholarshipsService.findAll({ 
+      status, 
+      type, 
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined 
+    });
+    
+    // Return paginated format for frontend, but keep service returning array for backward compatibility
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    
+    return {
+      data: scholarships,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: scholarships.length,
+        totalPages: Math.ceil(scholarships.length / limitNum)
+      }
+    };
   }
 
   @Get(':id')

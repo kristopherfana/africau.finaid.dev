@@ -1,10 +1,10 @@
 import Cookies from 'js-cookie'
 import { create } from 'zustand'
 import { authAPI } from '@/lib/api'
+import { UserRole } from '@/types/user'
 
 const ACCESS_TOKEN = 'auth_token'
 
-export type UserRole = 'STUDENT' | 'ADMIN' | 'SPONSOR'
 
 interface AuthUser {
   id: string
@@ -13,6 +13,11 @@ interface AuthUser {
   firstName?: string
   lastName?: string
   profilePicture?: string
+  phoneNumber?: string
+  studentId?: string
+  department?: string
+  isActive?: boolean
+  emailVerified?: boolean
 }
 
 interface AuthState {

@@ -1,5 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole, Gender } from './create-user.dto';
+import { StudentProfileDto } from './student-profile.dto';
+import { ReviewerProfileDto } from './reviewer-profile.dto';
+import { AdminProfileDto } from './admin-profile.dto';
+import { SponsorProfileDto } from './sponsor-profile.dto';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -45,11 +49,17 @@ export class UserResponseDto {
   })
   dateOfBirth?: string;
 
-  @ApiProperty({
-    example: 'ST2024001',
-    description: 'Student ID for students',
+  @ApiPropertyOptional({
+    example: 'Zimbabwean',
+    description: 'Nationality of the user',
   })
-  studentId?: string;
+  nationality?: string;
+
+  @ApiPropertyOptional({
+    example: '123 Main Street, Harare, Zimbabwe',
+    description: 'Address of the user',
+  })
+  address?: string;
 
   @ApiProperty({
     enum: UserRole,
@@ -57,24 +67,6 @@ export class UserResponseDto {
     description: 'Role of the user',
   })
   role: UserRole;
-
-  @ApiProperty({
-    example: 'Computer Science',
-    description: 'Department or field of study',
-  })
-  department?: string;
-
-  @ApiProperty({
-    example: 3,
-    description: 'Current year of study',
-  })
-  yearOfStudy?: number;
-
-  @ApiProperty({
-    example: 3.75,
-    description: 'Current GPA',
-  })
-  gpa?: number;
 
   @ApiProperty({
     example: true,
@@ -99,4 +91,25 @@ export class UserResponseDto {
     description: 'Last update timestamp',
   })
   updatedAt: Date;
+
+  // Role-specific profile data
+  @ApiPropertyOptional({
+    description: 'Student-specific profile data (only for STUDENT role)',
+  })
+  studentProfile?: StudentProfileDto;
+
+  @ApiPropertyOptional({
+    description: 'Reviewer-specific profile data (only for REVIEWER role)',
+  })
+  reviewerProfile?: ReviewerProfileDto;
+
+  @ApiPropertyOptional({
+    description: 'Admin-specific profile data (only for ADMIN role)',
+  })
+  adminProfile?: AdminProfileDto;
+
+  @ApiPropertyOptional({
+    description: 'Sponsor-specific profile data (only for SPONSOR role)',
+  })
+  sponsorProfile?: SponsorProfileDto;
 }

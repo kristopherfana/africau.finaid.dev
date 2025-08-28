@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
-import { useUser } from '@clerk/clerk-react'
+import { useAuth } from '@/stores/authStore'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
@@ -26,7 +26,7 @@ interface ApplicationFormProps {
 }
 
 export function ApplicationForm({ scholarshipId }: ApplicationFormProps) {
-  const { user } = useUser()
+  const { user } = useAuth()
   const navigate = useNavigate()
   
   const { data: scholarship, isLoading: scholarshipLoading } = useScholarship(scholarshipId)

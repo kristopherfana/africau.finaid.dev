@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { StudentHeader } from '@/components/layout/student-header'
 import { Main } from '@/components/layout/main'
 import { PatternWrapper } from '@/components/au-showcase'
+import { DocumentUpload } from '@/components/document-upload'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/_authenticated/documents/')({
 })
 
 function DocumentsPage() {
-  const [documents] = useState([
+  const [documents, setDocuments] = useState([
     {
       id: 1,
       name: 'Academic Transcript',
@@ -74,6 +75,19 @@ function DocumentsPage() {
   ]
 
   const completionPercentage = (requiredDocuments.filter(d => d.uploaded).length / requiredDocuments.length) * 100
+
+  const handleUploadComplete = (uploadedDocument: any) => {
+    // Add the new document to the list
+    setDocuments(prev => [...prev, {
+      id: prev.length + 1,
+      name: uploadedDocument.fileName || 'New Document',
+      type: uploadedDocument.mimeType?.split('/')[1]?.toUpperCase() || 'PDF',
+      size: uploadedDocument.fileSize ? `${(uploadedDocument.fileSize / 1024 / 1024).toFixed(1)} MB` : '0 MB',
+      status: 'pending', // New uploads start as pending verification
+      uploadedDate: new Date().toISOString().split('T')[0],
+      required: false,
+    }])
+  }
 
   return (
     <>
@@ -246,17 +260,12 @@ function DocumentsPage() {
                 ))}
 
                 {/* Upload New Document Card */}
-                <div className="au-card border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer">
-                  <div className="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
-                    <Upload className="w-12 h-12 text-gray-400 mb-3" />
-                    <h3 className="font-semibold text-gray-700 mb-2">Upload New Document</h3>
-                    <p className="text-sm text-gray-500 text-center mb-4">
-                      Drag and drop or click to browse
-                    </p>
-                    <button className="au-btn-secondary px-6 py-2 text-sm rounded-md font-semibold transition-all duration-200">
-                      Select File
-                    </button>
-                  </div>
+                <div className="col-span-full">
+                  <DocumentUpload 
+                    onUploadComplete={handleUploadComplete}
+                    maxFiles={5}
+                    maxSizeInMB={10}
+                  />
                 </div>
               </div>
             </div>

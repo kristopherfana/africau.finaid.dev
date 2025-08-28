@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useUser } from '@clerk/clerk-react'
+import { useAuth } from '@/stores/authStore'
 import { Calendar, DollarSign, User, FileText, CheckCircle, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -23,7 +23,7 @@ const reviewSchema = z.object({
 type ReviewFormData = z.infer<typeof reviewSchema>
 
 export function ApplicationsReview() {
-  const { user } = useUser()
+  const { user } = useAuth()
   const { data, isLoading, error } = useApplicationsForReview({
     status: 'UNDER_REVIEW',
     page: 1,

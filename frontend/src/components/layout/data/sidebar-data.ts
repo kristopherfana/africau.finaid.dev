@@ -33,7 +33,6 @@ import {
   FileSpreadsheet,
   Bell
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {

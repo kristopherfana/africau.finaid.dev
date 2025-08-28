@@ -1,5 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum, IsOptional, IsPhoneNumber } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum, IsOptional, IsPhoneNumber, ValidateNested, IsObject } from 'class-validator';
+import { Type } from 'class-transformer';
+import { StudentProfileDto } from './student-profile.dto';
+import { ReviewerProfileDto } from './reviewer-profile.dto';
+import { AdminProfileDto } from './admin-profile.dto';
+import { SponsorProfileDto } from './sponsor-profile.dto';
 
 export enum UserRole {
   STUDENT = 'STUDENT',
@@ -32,6 +37,22 @@ export class CreateUserDto {
   @IsNotEmpty()
   @MinLength(6)
   password: string;
+
+  @ApiPropertyOptional({
+    example: 'Zimbabwean',
+    description: 'Nationality of the user',
+  })
+  @IsString()
+  @IsOptional()
+  nationality?: string;
+
+  @ApiPropertyOptional({
+    example: '123 Main Street, Harare, Zimbabwe',
+    description: 'Address of the user',
+  })
+  @IsString()
+  @IsOptional()
+  address?: string;
 
   @ApiProperty({
     example: 'John',
@@ -78,15 +99,6 @@ export class CreateUserDto {
   dateOfBirth?: string;
 
   @ApiProperty({
-    example: 'ST2024001',
-    description: 'Student ID for students',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  studentId?: string;
-
-  @ApiProperty({
     enum: UserRole,
     example: UserRole.STUDENT,
     description: 'Role of the user',
@@ -94,28 +106,44 @@ export class CreateUserDto {
   @IsEnum(UserRole)
   role: UserRole;
 
-  @ApiProperty({
-    example: 'Computer Science',
-    description: 'Department or field of study',
-    required: false,
+  // Role-specific profile data
+  @ApiPropertyOptional({
+    description: 'Student profile data (required for STUDENT role)',
+    type: StudentProfileDto,
   })
-  @IsString()
   @IsOptional()
-  department?: string;
+  @ValidateNested()
+  @Type(() => StudentProfileDto)
+  @IsObject()
+  studentProfile?: StudentProfileDto;
 
-  @ApiProperty({
-    example: 3,
-    description: 'Current year of study (for students)',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Reviewer profile data (required for REVIEWER role)',
+    type: ReviewerProfileDto,
   })
   @IsOptional()
-  yearOfStudy?: number;
+  @ValidateNested()
+  @Type(() => ReviewerProfileDto)
+  @IsObject()
+  reviewerProfile?: ReviewerProfileDto;
 
-  @ApiProperty({
-    example: 3.75,
-    description: 'Current GPA (for students)',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Admin profile data (required for ADMIN role)',
+    type: AdminProfileDto,
   })
   @IsOptional()
-  gpa?: number;
+  @ValidateNested()
+  @Type(() => AdminProfileDto)
+  @IsObject()
+  adminProfile?: AdminProfileDto;
+
+  @ApiPropertyOptional({
+    description: 'Sponsor profile data (required for SPONSOR role)',
+    type: SponsorProfileDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SponsorProfileDto)
+  @IsObject()
+  sponsorProfile?: SponsorProfileDto;
 }

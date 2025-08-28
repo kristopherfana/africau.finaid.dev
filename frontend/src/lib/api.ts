@@ -1,4 +1,7 @@
 import { toast } from 'sonner'
+import type { Scholarship, ScholarshipFilters, ScholarshipResponse } from '@/types/scholarship'
+import type { Application, ApplicationFilters, CreateApplicationData, UpdateApplicationData } from '@/types/application'
+import type { UserResponseDto, UpdateUserProfileDto } from '@/types/user'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -72,7 +75,7 @@ class ApiClient {
     }
 
     if (this.token && !skipAuth) {
-      requestHeaders['Authorization'] = `Bearer ${this.token}`
+      ;(requestHeaders as any)['Authorization'] = `Bearer ${this.token}`
     }
 
     try {
@@ -181,33 +184,60 @@ export const authAPI = {
 
 // Users API
 export const usersAPI = {
-  getProfile: () => apiClient.get('/users/profile'),
-  getAll: (params?: any) => apiClient.get('/users', { params }),
-  getById: (id: string) => apiClient.get(`/users/${id}`),
-  update: (id: string, data: any) => apiClient.put(`/users/${id}`, data),
-  activate: (id: string) => apiClient.patch(`/users/${id}/activate`),
-  deactivate: (id: string) => apiClient.patch(`/users/${id}/deactivate`),
-  changePassword: (id: string, data: { currentPassword: string; newPassword: string }) =>
+  getProfile: (): Promise<UserResponseDto> => apiClient.get('/users/profile'),
+  getAll: (params?: any): Promise<UserResponseDto[]> => apiClient.get('/users', { params }),
+  getById: (id: string): Promise<UserResponseDto> => apiClient.get(`/users/${id}`),
+  update: (id: string, data: UpdateUserProfileDto): Promise<UserResponseDto> => apiClient.put(`/users/${id}`, data),
+  activate: (id: string): Promise<UserResponseDto> => apiClient.patch(`/users/${id}/activate`),
+  deactivate: (id: string): Promise<UserResponseDto> => apiClient.patch(`/users/${id}/deactivate`),
+  changePassword: (id: string, data: { currentPassword: string; newPassword: string }): Promise<{ message: string }> =>
     apiClient.patch(`/users/${id}/change-password`, data),
 }
 
 // Scholarships API
 export const scholarshipsAPI = {
-  getAll: (params?: any) => apiClient.get('/scholarships', { params }),
-  getById: (id: string) => apiClient.get(`/scholarships/${id}`),
-  create: (data: any) => apiClient.post('/scholarships', data),
-  update: (id: string, data: any) => apiClient.put(`/scholarships/${id}`, data),
-  delete: (id: string) => apiClient.delete(`/scholarships/${id}`),
+  getAll: (params?: ScholarshipFilters): Promise<ScholarshipResponse> => 
+    apiClient.get('/scholarships', { params }),
+  getById: (id: string): Promise<Scholarship> => 
+    apiClient.get(`/scholarships/${id}`),
+  create: (data: any): Promise<Scholarship> => 
+    apiClient.post('/scholarships', data),
+  update: (id: string, data: any): Promise<Scholarship> => 
+    apiClient.put(`/scholarships/${id}`, data),
+  delete: (id: string): Promise<void> => 
+    apiClient.delete(`/scholarships/${id}`),
 }
 
 // Applications API
 export const applicationsAPI = {
-  getAll: (params?: any) => apiClient.get('/applications', { params }),
-  getById: (id: string) => apiClient.get(`/applications/${id}`),
-  create: (data: any) => apiClient.post('/applications', data),
-  update: (id: string, data: any) => apiClient.put(`/applications/${id}`, data),
-  updateStatus: (id: string, status: string, reason?: string) =>
-    apiClient.patch(`/applications/${id}/status`, { status, reason }),
-  submit: (id: string) => apiClient.post(`/applications/${id}/submit`),
-  withdraw: (id: string) => apiClient.post(`/applications/${id}/withdraw`),
+  getAll: (params?: ApplicationFilters): Promise<Application[]> => 
+    apiClient.get('/applications', { params }),
+  getById: (id: string): Promise<Application> => 
+    apiClient.get(`/applications/${id}`),
+  getMyApplications: (): Promise<Application[]> =>
+    apiClient.get('/applications/my-applications'),
+  create: (data: CreateApplicationData): Promise<Application> => 
+    apiClient.post('/applications', data),
+  update: (id: string, data: UpdateApplicationData): Promise<Application> => 
+    apiClient.put(`/applications/${id}`, data),
+  updateStatus: (id: string, data: { status: string; reason?: string }): Promise<Application> =>
+    apiClient.patch(`/applications/${id}/review`, data),
+  submit: (id: string): Promise<Application> => 
+    apiClient.patch(`/applications/${id}/submit`),
+  withdraw: (id: string): Promise<Application> => 
+    apiClient.patch(`/applications/${id}/withdraw`),
+  delete: (id: string): Promise<void> =>
+    apiClient.delete(`/applications/${id}`),
+}
+
+// Documents API
+export const documentsAPI = {
+  getAll: (params?: { documentType?: string; applicationId?: string }): Promise<any[]> => 
+    apiClient.get('/documents', { params }),
+  getById: (id: string): Promise<any> => 
+    apiClient.get(`/documents/${id}`),
+  download: (id: string): Promise<Blob> => 
+    apiClient.get(`/documents/${id}/download`),
+  delete: (id: string): Promise<void> => 
+    apiClient.delete(`/documents/${id}`),
 }

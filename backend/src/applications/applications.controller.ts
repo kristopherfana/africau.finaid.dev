@@ -40,7 +40,17 @@ export class ApplicationsController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(@Body() createApplicationDto: CreateApplicationDto): Promise<ApplicationResponseDto> {
-    return this.applicationsService.create(createApplicationDto);
+    // TODO: Extract current user ID from JWT token
+    // For testing, we'll look for any student user in the database
+    let currentUserId = createApplicationDto.applicantId;
+    
+    if (!currentUserId) {
+      // Find a student user for testing
+      const studentUser = await this.applicationsService.findAnyStudentUser();
+      currentUserId = studentUser?.id || 'current-user-id';
+    }
+    
+    return this.applicationsService.create(createApplicationDto, currentUserId);
   }
 
   @Get()
@@ -59,15 +69,15 @@ export class ApplicationsController {
     @Query('status') status?: string,
     @Query('scholarshipId') scholarshipId?: string,
     @Query('applicantId') applicantId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ): Promise<ApplicationResponseDto[]> {
     return this.applicationsService.findAll({
       status,
       scholarshipId,
       applicantId,
-      page,
-      limit,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
     });
   }
 
@@ -80,7 +90,7 @@ export class ApplicationsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMyApplications(): Promise<ApplicationResponseDto[]> {
-    // TODO: Get user ID from JWT token
+    // TODO: Get user ID from JWT token/request
     const userId = 'current-user-id';
     return this.applicationsService.findByApplicant(userId);
   }
