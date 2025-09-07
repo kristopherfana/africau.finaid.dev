@@ -30,6 +30,7 @@ import { Route as AuthenticatedScholarshipsIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authenticated/documents/index'
+import { Route as AuthenticatedDevOfficeIndexRouteImport } from './routes/_authenticated/dev-office/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAwardsIndexRouteImport } from './routes/_authenticated/awards/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
@@ -43,7 +44,12 @@ import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_auth
 import { Route as AuthenticatedApplicationsApplicationIdRouteImport } from './routes/_authenticated/applications/$applicationId'
 import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
 import { Route as AuthenticatedScholarshipsIdIndexRouteImport } from './routes/_authenticated/scholarships/$id/index'
+import { Route as AuthenticatedDevOfficeTrackingIndexRouteImport } from './routes/_authenticated/dev-office/tracking/index'
+import { Route as AuthenticatedDevOfficeScholarshipsIndexRouteImport } from './routes/_authenticated/dev-office/scholarships/index'
 import { Route as AuthenticatedScholarshipsIdApplyRouteImport } from './routes/_authenticated/scholarships/$id/apply'
+import { Route as AuthenticatedDocumentsViewDocumentIdRouteImport } from './routes/_authenticated/documents/view.$documentId'
+import { Route as AuthenticatedDevOfficeScholarshipsCreateRouteImport } from './routes/_authenticated/dev-office/scholarships/create'
+import { Route as AuthenticatedDevOfficeScholarshipsIdCyclesRouteImport } from './routes/_authenticated/dev-office/scholarships/$id/cycles'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -156,6 +162,12 @@ const AuthenticatedDocumentsIndexRoute =
     path: '/documents/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDevOfficeIndexRoute =
+  AuthenticatedDevOfficeIndexRouteImport.update({
+    id: '/dev-office/',
+    path: '/dev-office/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   id: '/chats/',
   path: '/chats/',
@@ -232,10 +244,40 @@ const AuthenticatedScholarshipsIdIndexRoute =
     path: '/scholarships/$id/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDevOfficeTrackingIndexRoute =
+  AuthenticatedDevOfficeTrackingIndexRouteImport.update({
+    id: '/dev-office/tracking/',
+    path: '/dev-office/tracking/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDevOfficeScholarshipsIndexRoute =
+  AuthenticatedDevOfficeScholarshipsIndexRouteImport.update({
+    id: '/dev-office/scholarships/',
+    path: '/dev-office/scholarships/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedScholarshipsIdApplyRoute =
   AuthenticatedScholarshipsIdApplyRouteImport.update({
     id: '/scholarships/$id/apply',
     path: '/scholarships/$id/apply',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsViewDocumentIdRoute =
+  AuthenticatedDocumentsViewDocumentIdRouteImport.update({
+    id: '/documents/view/$documentId',
+    path: '/documents/view/$documentId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDevOfficeScholarshipsCreateRoute =
+  AuthenticatedDevOfficeScholarshipsCreateRouteImport.update({
+    id: '/dev-office/scholarships/create',
+    path: '/dev-office/scholarships/create',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDevOfficeScholarshipsIdCyclesRoute =
+  AuthenticatedDevOfficeScholarshipsIdCyclesRouteImport.update({
+    id: '/dev-office/scholarships/$id/cycles',
+    path: '/dev-office/scholarships/$id/cycles',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -265,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/awards': typeof AuthenticatedAwardsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/dev-office': typeof AuthenticatedDevOfficeIndexRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
@@ -272,8 +315,13 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/dev-office/scholarships/create': typeof AuthenticatedDevOfficeScholarshipsCreateRoute
+  '/documents/view/$documentId': typeof AuthenticatedDocumentsViewDocumentIdRoute
   '/scholarships/$id/apply': typeof AuthenticatedScholarshipsIdApplyRoute
+  '/dev-office/scholarships': typeof AuthenticatedDevOfficeScholarshipsIndexRoute
+  '/dev-office/tracking': typeof AuthenticatedDevOfficeTrackingIndexRoute
   '/scholarships/$id': typeof AuthenticatedScholarshipsIdIndexRoute
+  '/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
@@ -299,6 +347,7 @@ export interface FileRoutesByTo {
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/awards': typeof AuthenticatedAwardsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/dev-office': typeof AuthenticatedDevOfficeIndexRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
@@ -306,8 +355,13 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/dev-office/scholarships/create': typeof AuthenticatedDevOfficeScholarshipsCreateRoute
+  '/documents/view/$documentId': typeof AuthenticatedDocumentsViewDocumentIdRoute
   '/scholarships/$id/apply': typeof AuthenticatedScholarshipsIdApplyRoute
+  '/dev-office/scholarships': typeof AuthenticatedDevOfficeScholarshipsIndexRoute
+  '/dev-office/tracking': typeof AuthenticatedDevOfficeTrackingIndexRoute
   '/scholarships/$id': typeof AuthenticatedScholarshipsIdIndexRoute
+  '/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -337,6 +391,7 @@ export interface FileRoutesById {
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/awards/': typeof AuthenticatedAwardsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/dev-office/': typeof AuthenticatedDevOfficeIndexRoute
   '/_authenticated/documents/': typeof AuthenticatedDocumentsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
@@ -344,8 +399,13 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/dev-office/scholarships/create': typeof AuthenticatedDevOfficeScholarshipsCreateRoute
+  '/_authenticated/documents/view/$documentId': typeof AuthenticatedDocumentsViewDocumentIdRoute
   '/_authenticated/scholarships/$id/apply': typeof AuthenticatedScholarshipsIdApplyRoute
+  '/_authenticated/dev-office/scholarships/': typeof AuthenticatedDevOfficeScholarshipsIndexRoute
+  '/_authenticated/dev-office/tracking/': typeof AuthenticatedDevOfficeTrackingIndexRoute
   '/_authenticated/scholarships/$id/': typeof AuthenticatedScholarshipsIdIndexRoute
+  '/_authenticated/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -375,6 +435,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/awards'
     | '/chats'
+    | '/dev-office'
     | '/documents'
     | '/help-center'
     | '/notifications'
@@ -382,8 +443,13 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/tasks'
     | '/users'
+    | '/dev-office/scholarships/create'
+    | '/documents/view/$documentId'
     | '/scholarships/$id/apply'
+    | '/dev-office/scholarships'
+    | '/dev-office/tracking'
     | '/scholarships/$id'
+    | '/dev-office/scholarships/$id/cycles'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -409,6 +475,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/awards'
     | '/chats'
+    | '/dev-office'
     | '/documents'
     | '/help-center'
     | '/notifications'
@@ -416,8 +483,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/dev-office/scholarships/create'
+    | '/documents/view/$documentId'
     | '/scholarships/$id/apply'
+    | '/dev-office/scholarships'
+    | '/dev-office/tracking'
     | '/scholarships/$id'
+    | '/dev-office/scholarships/$id/cycles'
   id:
     | '__root__'
     | '/_authenticated'
@@ -446,6 +518,7 @@ export interface FileRouteTypes {
     | '/_authenticated/apps/'
     | '/_authenticated/awards/'
     | '/_authenticated/chats/'
+    | '/_authenticated/dev-office/'
     | '/_authenticated/documents/'
     | '/_authenticated/help-center/'
     | '/_authenticated/notifications/'
@@ -453,8 +526,13 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/dev-office/scholarships/create'
+    | '/_authenticated/documents/view/$documentId'
     | '/_authenticated/scholarships/$id/apply'
+    | '/_authenticated/dev-office/scholarships/'
+    | '/_authenticated/dev-office/tracking/'
     | '/_authenticated/scholarships/$id/'
+    | '/_authenticated/dev-office/scholarships/$id/cycles'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -620,6 +698,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dev-office/': {
+      id: '/_authenticated/dev-office/'
+      path: '/dev-office'
+      fullPath: '/dev-office'
+      preLoaderRoute: typeof AuthenticatedDevOfficeIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chats/': {
       id: '/_authenticated/chats/'
       path: '/chats'
@@ -711,11 +796,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScholarshipsIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dev-office/tracking/': {
+      id: '/_authenticated/dev-office/tracking/'
+      path: '/dev-office/tracking'
+      fullPath: '/dev-office/tracking'
+      preLoaderRoute: typeof AuthenticatedDevOfficeTrackingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dev-office/scholarships/': {
+      id: '/_authenticated/dev-office/scholarships/'
+      path: '/dev-office/scholarships'
+      fullPath: '/dev-office/scholarships'
+      preLoaderRoute: typeof AuthenticatedDevOfficeScholarshipsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/scholarships/$id/apply': {
       id: '/_authenticated/scholarships/$id/apply'
       path: '/scholarships/$id/apply'
       fullPath: '/scholarships/$id/apply'
       preLoaderRoute: typeof AuthenticatedScholarshipsIdApplyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/view/$documentId': {
+      id: '/_authenticated/documents/view/$documentId'
+      path: '/documents/view/$documentId'
+      fullPath: '/documents/view/$documentId'
+      preLoaderRoute: typeof AuthenticatedDocumentsViewDocumentIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dev-office/scholarships/create': {
+      id: '/_authenticated/dev-office/scholarships/create'
+      path: '/dev-office/scholarships/create'
+      fullPath: '/dev-office/scholarships/create'
+      preLoaderRoute: typeof AuthenticatedDevOfficeScholarshipsCreateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dev-office/scholarships/$id/cycles': {
+      id: '/_authenticated/dev-office/scholarships/$id/cycles'
+      path: '/dev-office/scholarships/$id/cycles'
+      fullPath: '/dev-office/scholarships/$id/cycles'
+      preLoaderRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -771,14 +891,20 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedAwardsIndexRoute: typeof AuthenticatedAwardsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedDevOfficeIndexRoute: typeof AuthenticatedDevOfficeIndexRoute
   AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedNotificationsIndexRoute: typeof AuthenticatedNotificationsIndexRoute
   AuthenticatedScholarshipsIndexRoute: typeof AuthenticatedScholarshipsIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedDevOfficeScholarshipsCreateRoute: typeof AuthenticatedDevOfficeScholarshipsCreateRoute
+  AuthenticatedDocumentsViewDocumentIdRoute: typeof AuthenticatedDocumentsViewDocumentIdRoute
   AuthenticatedScholarshipsIdApplyRoute: typeof AuthenticatedScholarshipsIdApplyRoute
+  AuthenticatedDevOfficeScholarshipsIndexRoute: typeof AuthenticatedDevOfficeScholarshipsIndexRoute
+  AuthenticatedDevOfficeTrackingIndexRoute: typeof AuthenticatedDevOfficeTrackingIndexRoute
   AuthenticatedScholarshipsIdIndexRoute: typeof AuthenticatedScholarshipsIdIndexRoute
+  AuthenticatedDevOfficeScholarshipsIdCyclesRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -791,14 +917,25 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedAwardsIndexRoute: AuthenticatedAwardsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedDevOfficeIndexRoute: AuthenticatedDevOfficeIndexRoute,
   AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedNotificationsIndexRoute: AuthenticatedNotificationsIndexRoute,
   AuthenticatedScholarshipsIndexRoute: AuthenticatedScholarshipsIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedDevOfficeScholarshipsCreateRoute:
+    AuthenticatedDevOfficeScholarshipsCreateRoute,
+  AuthenticatedDocumentsViewDocumentIdRoute:
+    AuthenticatedDocumentsViewDocumentIdRoute,
   AuthenticatedScholarshipsIdApplyRoute: AuthenticatedScholarshipsIdApplyRoute,
+  AuthenticatedDevOfficeScholarshipsIndexRoute:
+    AuthenticatedDevOfficeScholarshipsIndexRoute,
+  AuthenticatedDevOfficeTrackingIndexRoute:
+    AuthenticatedDevOfficeTrackingIndexRoute,
   AuthenticatedScholarshipsIdIndexRoute: AuthenticatedScholarshipsIdIndexRoute,
+  AuthenticatedDevOfficeScholarshipsIdCyclesRoute:
+    AuthenticatedDevOfficeScholarshipsIdCyclesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

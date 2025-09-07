@@ -236,8 +236,12 @@ export const documentsAPI = {
     apiClient.get('/documents', { params }),
   getById: (id: string): Promise<any> => 
     apiClient.get(`/documents/${id}`),
-  download: (id: string): Promise<Blob> => 
-    apiClient.get(`/documents/${id}/download`),
+  download: async (id: string): Promise<{ document: any; url: string }> => {
+    // For now, return a mock download URL since backend returns mock data
+    const document = await apiClient.get(`/documents/${id}`)
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    return { document, url: `${API_BASE_URL}/documents/${id}/download` }
+  },
   delete: (id: string): Promise<void> => 
     apiClient.delete(`/documents/${id}`),
 }

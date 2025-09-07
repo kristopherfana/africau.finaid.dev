@@ -1,6 +1,7 @@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Calendar, CheckCircle, Clock, DollarSign, FileText, XCircle } from 'lucide-react'
 import { useUserApplications, useWithdrawApplication } from '@/hooks/use-applications'
+import { useNavigate } from '@tanstack/react-router'
 
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
@@ -16,8 +17,11 @@ const statusColors = {
 
 export function UserApplications() {
   const { user } = useAuthStore()
+  console.log('UserApplications - Current user:', user)
   const { data, isLoading, error } = useUserApplications(user?.id || '')
+  console.log('UserApplications - Data:', data, 'Loading:', isLoading, 'Error:', error)
   const withdrawApplication = useWithdrawApplication()
+  const navigate = useNavigate()
 
   const handleWithdraw = async (applicationId: string) => {
     if (!user?.id) return
@@ -31,6 +35,12 @@ export function UserApplications() {
     } catch (error: any) {
       toast.error(error.message || 'Failed to withdraw application')
     }
+  }
+
+  const handleViewDetails = (applicationId: string) => {
+    console.log('UserApplications - Navigating to application:', applicationId)
+    console.log('UserApplications - Target path:', `/applications/${applicationId}`)
+    navigate({ to: `/applications/${applicationId}` })
   }
 
   if (isLoading) {
@@ -170,7 +180,10 @@ export function UserApplications() {
 
               {/* Action Buttons */}
               <div className="flex space-x-3">
-                <button className="au-btn-secondary px-4 py-2 text-sm rounded-md font-semibold transition-all duration-200 flex items-center">
+                <button 
+                  onClick={() => handleViewDetails(application.id)}
+                  className="au-btn-secondary px-4 py-2 text-sm rounded-md font-semibold transition-all duration-200 flex items-center"
+                >
                   <FileText className="w-4 h-4 mr-2" />
                   View Details
                 </button>

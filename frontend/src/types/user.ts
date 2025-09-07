@@ -3,6 +3,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   SPONSOR = 'SPONSOR',
   REVIEWER = 'REVIEWER',
+  DEVELOPMENT_OFFICE = 'DEVELOPMENT_OFFICE',
 }
 
 export enum Gender {
@@ -80,6 +81,12 @@ export interface SponsorProfile {
   isVerified?: boolean
 }
 
+export interface DevelopmentOfficeProfile {
+  department: string
+  responsibleAreas?: string[]
+  permissions?: string[]
+}
+
 export interface UserResponseDto {
   id: string
   email: string
@@ -98,6 +105,7 @@ export interface UserResponseDto {
   reviewerProfile?: ReviewerProfile
   adminProfile?: AdminProfile
   sponsorProfile?: SponsorProfile
+  developmentOfficeProfile?: DevelopmentOfficeProfile
 }
 
 export interface UpdateUserProfileDto {
@@ -113,6 +121,7 @@ export interface UpdateUserProfileDto {
   reviewerProfile?: Partial<ReviewerProfile>
   adminProfile?: Partial<AdminProfile>
   sponsorProfile?: Partial<SponsorProfile>
+  developmentOfficeProfile?: Partial<DevelopmentOfficeProfile>
 }
 
 export interface ChangePasswordDto {

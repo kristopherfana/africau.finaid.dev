@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Upload, FileText, X, CheckCircle, AlertCircle } from 'lucide-react'
@@ -40,6 +40,7 @@ export function DocumentUpload({
   const [isDragOver, setIsDragOver] = useState(false)
   const [selectedDocumentType, setSelectedDocumentType] = useState('OTHER')
   const [description, setDescription] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const validateFile = (file: File): string | null => {
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
@@ -186,7 +187,6 @@ export function DocumentUpload({
         )
       )
 
-      toast.success(`${uploadedFile.file.name} uploaded successfully`)
       onUploadComplete?.(result)
 
       // Remove successful uploads after a delay
@@ -211,6 +211,26 @@ export function DocumentUpload({
     files
       .filter(f => f.status === 'pending')
       .forEach(uploadFile)
+  }
+
+  const handleUploadAreaClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Upload area clicked, triggering file input')
+    if (fileInputRef.current && !fileInputRef.current.disabled) {
+      console.log('File input found, clicking...')
+      // Try multiple methods to trigger the file input
+      try {
+        fileInputRef.current.click()
+      } catch (error) {
+        console.error('Direct click failed:', error)
+        // Fallback: dispatch a click event
+        const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+        fileInputRef.current.dispatchEvent(event)
+      }
+    } else {
+      console.log('File input not found or disabled')
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -254,7 +274,7 @@ export function DocumentUpload({
       {/* Drop Zone */}
       <Card
         className={cn(
-          'border-2 border-dashed transition-colors cursor-pointer',
+          'border-2 border-dashed transition-colors',
           isDragOver 
             ? 'border-blue-400 bg-blue-50' 
             : 'border-gray-300 hover:border-gray-400'
@@ -266,11 +286,12 @@ export function DocumentUpload({
         <CardContent className="p-8">
           <div className="text-center">
             <input
+              ref={fileInputRef}
               type="file"
               multiple
               accept={acceptedTypes.join(',')}
               onChange={handleFileSelect}
-              className="sr-only"
+              className="hidden"
               id="document-upload"
               disabled={files.length >= maxFiles}
             />
@@ -281,7 +302,7 @@ export function DocumentUpload({
                 Drag and drop files here, or{' '}
                 <label
                   htmlFor="document-upload"
-                  className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium"
+                  className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium inline-block"
                 >
                   click to browse
                 </label>

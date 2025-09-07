@@ -18,9 +18,13 @@ export const applicationKeys = {
  * Hook to fetch user's applications
  */
 export function useUserApplications(userId: string, filters: ApplicationFilters = {}) {
+  console.log('useUserApplications - userId:', userId, 'filters:', filters)
   return useQuery({
     queryKey: applicationKeys.list({ ...filters, userId }),
-    queryFn: () => applicationsAPI.getAll({ ...filters, userId }),
+    queryFn: () => {
+      console.log('useUserApplications - Making API call with:', { ...filters, userId })
+      return applicationsAPI.getAll({ ...filters, userId })
+    },
     enabled: !!userId,
     staleTime: 1000 * 60 * 2, // 2 minutes
   })

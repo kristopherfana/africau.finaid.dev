@@ -8,7 +8,8 @@ import {
   Param, 
   Query,
   HttpCode,
-  HttpStatus 
+  HttpStatus,
+  UseGuards 
 } from '@nestjs/common';
 import { 
   ApiTags, 
@@ -22,14 +23,19 @@ import { ScholarshipsService } from './scholarships.service';
 import { CreateScholarshipDto } from './dto/create-scholarship.dto';
 import { UpdateScholarshipDto } from './dto/update-scholarship.dto';
 import { ScholarshipResponseDto } from './dto/scholarship-response.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles, UserRole } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Scholarships')
 @ApiBearerAuth()
 @Controller('scholarships')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ScholarshipsController {
   constructor(private readonly scholarshipsService: ScholarshipsService) {}
 
   @Post()
+  @Roles(UserRole.DEVELOPMENT_OFFICE, UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new scholarship' })
   @ApiResponse({
     status: 201,
@@ -95,6 +101,7 @@ export class ScholarshipsController {
   }
 
   @Put(':id')
+  @Roles(UserRole.DEVELOPMENT_OFFICE, UserRole.ADMIN)
   @ApiOperation({ summary: 'Update a scholarship' })
   @ApiParam({ name: 'id', description: 'Scholarship ID' })
   @ApiResponse({
@@ -112,6 +119,7 @@ export class ScholarshipsController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.DEVELOPMENT_OFFICE, UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a scholarship' })
   @ApiParam({ name: 'id', description: 'Scholarship ID' })

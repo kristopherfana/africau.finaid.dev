@@ -342,6 +342,22 @@
   color: #c20000;
 }
 
+.au-badge-info {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.au-badge-secondary {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.au-badge-neutral {
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
 /* Progress Indicators */
 .au-progress {
   height: 8px;

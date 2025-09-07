@@ -11,6 +11,8 @@ import {
   UploadedFile,
   UploadedFiles,
   BadRequestException,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -25,7 +27,8 @@ import {
 } from '@nestjs/swagger';
 import { DocumentsService } from './documents.service';
 import { DocumentResponseDto } from './dto/document-response.dto';
-import { Express } from 'express';
+import { Express, Response } from 'express';
+import { Readable } from 'stream';
 
 @ApiTags('Documents')
 @ApiBearerAuth()
@@ -193,8 +196,17 @@ export class DocumentsController {
     },
   })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  async download(@Param('id') id: string) {
-    return this.documentsService.download(id);
+  async download(@Param('id') id: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
+    const { document, fileBuffer } = await this.documentsService.download(id);
+    
+    // Set appropriate headers for file download
+    res.set({
+      'Content-Type': document.mimeType || 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${document.fileName}"`,
+      'Content-Length': fileBuffer.length.toString(),
+    });
+    
+    return new StreamableFile(fileBuffer);
   }
 
   @Delete(':id')

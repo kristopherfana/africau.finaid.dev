@@ -18,7 +18,12 @@ import {
   Bell,
   DollarSign,
   TrendingUp,
-  Target
+  Target,
+  BarChart3,
+  Calendar,
+  PieChart,
+  BookOpen,
+  Settings2
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 import { UserRole } from '@/stores/authStore'
@@ -148,6 +153,86 @@ export const getNavDataForRole = (role: UserRole, user: any): SidebarData => {
               title: 'Export Data',
               url: '/admin/export',
               icon: FileSpreadsheet,
+            },
+          ],
+        },
+        {
+          title: 'Account',
+          items: commonAccountItems,
+        },
+      ]
+      break
+
+    case 'DEVELOPMENT_OFFICE':
+      baseData.navGroups = [
+        {
+          title: 'Main',
+          items: [
+            {
+              title: 'Dashboard',
+              url: '/dev-office',
+              icon: Home,
+            },
+            {
+              title: 'All Scholarships',
+              url: '/dev-office/scholarships',
+              icon: GraduationCap,
+              badge: 'Manage',
+            },
+          ],
+        },
+        {
+          title: 'Scholarship Management',
+          items: [
+            {
+              title: 'Create Scholarship',
+              url: '/dev-office/scholarships/create',
+              icon: Target,
+            },
+            {
+              title: 'Yearly Tracking',
+              url: '/dev-office/tracking',
+              icon: Calendar,
+            },
+            {
+              title: 'Demographics Analysis',
+              url: '/dev-office/demographics',
+              icon: PieChart,
+            },
+            {
+              title: 'Impact Reports',
+              url: '/dev-office/reports',
+              icon: BarChart3,
+            },
+          ],
+        },
+        {
+          title: 'Sponsor Relations',
+          items: [
+            {
+              title: 'Manage Sponsors',
+              url: '/dev-office/sponsors',
+              icon: Building2,
+            },
+            {
+              title: 'Funding Overview',
+              url: '/dev-office/funding',
+              icon: DollarSign,
+            },
+          ],
+        },
+        {
+          title: 'Applications',
+          items: [
+            {
+              title: 'Review Applications',
+              url: '/dev-office/applications',
+              icon: ClipboardCheck,
+            },
+            {
+              title: 'Beneficiaries',
+              url: '/dev-office/beneficiaries',
+              icon: Users2,
             },
           ],
         },

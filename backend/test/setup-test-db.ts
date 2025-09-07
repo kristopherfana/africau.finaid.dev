@@ -50,8 +50,8 @@ class TestDatabaseSetup {
   
   constructor() {
     this.testEnvPath = path.join(process.cwd(), '.env.test');
-    this.testDbPath = path.join(process.cwd(), 'test.db');
-    this.backupDbPath = path.join(process.cwd(), 'test.db.backup');
+    this.testDbPath = path.join(process.cwd(), 'prisma', 'test.db');
+    this.backupDbPath = path.join(process.cwd(), 'prisma', 'test.db.backup');
   }
   
   async setup() {
@@ -91,14 +91,14 @@ class TestDatabaseSetup {
       if (fs.existsSync(exampleEnvPath)) {
         const content = fs.readFileSync(exampleEnvPath, 'utf8');
         const testContent = content
-          .replace(/DATABASE_URL=".*"/, 'DATABASE_URL="file:./test.db"')
+          .replace(/DATABASE_URL=".*"/, 'DATABASE_URL="file:./prisma/test.db"')
           .replace(/NODE_ENV=".*"/, 'NODE_ENV="test"')
           .replace(/PORT=\d+/, 'PORT=3001');
         fs.writeFileSync(this.testEnvPath, testContent);
       } else {
         // Create minimal .env.test
         fs.writeFileSync(this.testEnvPath, `
-DATABASE_URL="file:./test.db"
+DATABASE_URL="file:./prisma/test.db"
 JWT_SECRET="test-jwt-secret"
 NODE_ENV="test"
 PORT=3001
@@ -108,7 +108,7 @@ PORT=3001
     
     // Load environment variables
     dotenv.config({ path: this.testEnvPath });
-    process.env.DATABASE_URL = 'file:./test.db';
+    process.env.DATABASE_URL = 'file:./prisma/test.db';
     
     log('Test environment loaded', 'success');
   }
@@ -144,7 +144,7 @@ PORT=3001
         stdio: 'pipe',
         env: {
           ...process.env,
-          DATABASE_URL: 'file:./test.db',
+          DATABASE_URL: 'file:./prisma/test.db',
         },
       });
       
@@ -163,7 +163,7 @@ PORT=3001
         stdio: 'pipe',
         env: {
           ...process.env,
-          DATABASE_URL: 'file:./test.db',
+          DATABASE_URL: 'file:./prisma/test.db',
         },
       });
       
@@ -182,7 +182,7 @@ PORT=3001
       const prisma = new PrismaClient({
         datasources: {
           db: {
-            url: 'file:./test.db',
+            url: 'file:./prisma/test.db',
           },
         },
       });

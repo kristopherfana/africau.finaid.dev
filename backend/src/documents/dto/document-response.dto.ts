@@ -57,4 +57,7 @@ export class DocumentResponseDto {
     required: false,
   })
   applicationId?: string;
+
+  // Internal field - not exposed in API
+  filePath?: string;
 }
