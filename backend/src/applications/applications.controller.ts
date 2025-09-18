@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,10 +24,13 @@ import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { ApplicationResponseDto } from './dto/application-response.dto';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles, UserRole } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Applications')
 @ApiBearerAuth()
 @Controller('applications')
+@UseGuards(RolesGuard)
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
@@ -54,7 +58,8 @@ export class ApplicationsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all applications with filters' })
+  @Roles(UserRole.ADMIN, UserRole.STUDENT)
+  @ApiOperation({ summary: 'Get all applications with filters (admin and students only)' })
   @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'WITHDRAWN'] })
   @ApiQuery({ name: 'scholarshipId', required: false, type: String })
   @ApiQuery({ name: 'applicantId', required: false, type: String })
@@ -67,14 +72,14 @@ export class ApplicationsController {
   })
   async findAll(
     @Query('status') status?: string,
-    @Query('scholarshipId') scholarshipId?: string,
+    @Query('cycleId') cycleId?: string,
     @Query('applicantId') applicantId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ): Promise<ApplicationResponseDto[]> {
     return this.applicationsService.findAll({
       status,
-      scholarshipId,
+      cycleId,
       applicantId,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
@@ -96,7 +101,8 @@ export class ApplicationsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get an application by ID' })
+  @Roles(UserRole.ADMIN, UserRole.STUDENT)
+  @ApiOperation({ summary: 'Get an application by ID (admin and students only)' })
   @ApiParam({ name: 'id', description: 'Application ID' })
   @ApiResponse({
     status: 200,
@@ -140,7 +146,8 @@ export class ApplicationsController {
   }
 
   @Patch(':id/review')
-  @ApiOperation({ summary: 'Review an application (admin/reviewer only)' })
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Review an application (admin only)' })
   @ApiParam({ name: 'id', description: 'Application ID' })
   @ApiResponse({
     status: 200,
@@ -170,6 +177,7 @@ export class ApplicationsController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an application (admin only)' })
   @ApiParam({ name: 'id', description: 'Application ID' })

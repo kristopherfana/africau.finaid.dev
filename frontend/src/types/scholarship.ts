@@ -10,7 +10,7 @@ export interface Scholarship {
   eligibilityCriteria: string[]
   maxRecipients: number
   currentApplications: number
-  status: 'OPEN' | 'CLOSED' | 'SUSPENDED'
+  status: 'DRAFT' | 'OPEN' | 'CLOSED' | 'SUSPENDED'
   createdAt: string
   updatedAt: string
 }

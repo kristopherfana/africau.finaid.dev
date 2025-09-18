@@ -3,6 +3,7 @@ import { IsString, IsNotEmpty, IsNumber, IsDate, IsOptional, IsEnum, Min, Max, I
 import { Type, Transform } from 'class-transformer';
 
 export enum ScholarshipStatus {
+  DRAFT = 'DRAFT',
   OPEN = 'OPEN',
   CLOSED = 'CLOSED',
   SUSPENDED = 'SUSPENDED',
@@ -47,6 +48,15 @@ export class CreateScholarshipDto {
   @IsString()
   @IsNotEmpty()
   sponsor: string;
+
+  @ApiProperty({
+    example: 'sponsor-uuid-here',
+    description: 'ID of the sponsor',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  sponsorId?: string;
 
   @ApiProperty({
     enum: ScholarshipType,

@@ -23,7 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { 
+import {
   Save,
   ArrowLeft,
   Plus,
@@ -33,7 +33,8 @@ import {
   Users,
   Target,
   Info,
-  HelpCircle
+  HelpCircle,
+  Loader2
 } from 'lucide-react'
 import {
   Tooltip,
@@ -42,12 +43,23 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { useCreateScholarship } from '@/hooks/use-scholarships'
+import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '@/lib/api'
+import { toast } from 'sonner'
 
 interface ScholarshipCriteria {
   id: string
   type: string
   value: string
   isMandatory: boolean
+}
+
+interface Sponsor {
+  id: string
+  name: string
+  type: string
+  isActive: boolean
 }
 
 const FieldTooltip = ({ content, children }: { content: string; children: React.ReactNode }) => (
@@ -68,6 +80,17 @@ const FieldTooltip = ({ content, children }: { content: string; children: React.
 
 export default function CreateScholarship() {
   const navigate = useNavigate()
+  const createScholarshipMutation = useCreateScholarship()
+
+  // Fetch sponsors for selection
+  const { data: sponsors = [] } = useQuery<Sponsor[]>({
+    queryKey: ['sponsors'],
+    queryFn: async () => {
+      const response = await apiClient.get<Sponsor[]>('/sponsors');
+      return response;
+    }
+  });
+
   const [formData, setFormData] = useState({
     // Program-level data
     name: '',
@@ -78,7 +101,7 @@ export default function CreateScholarship() {
     startYear: '2025',
     endYear: '',
     maxYearsPerStudent: '1',
-    status: 'DRAFT',
+    isRecurring: false,
     // First cycle data (will become template for future cycles)
     academicYear: '2025-2026',
     amount: '',
@@ -124,26 +147,46 @@ export default function CreateScholarship() {
     setCriteria(prev => prev.filter(c => c.id !== id))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    console.log('Scholarship Data:', formData)
-    console.log('Criteria:', criteria)
-    
-    // The API will:
-    // 1. Create the scholarship program
-    // 2. Automatically create the first cycle using the form data
-    // 3. Set the first cycle's data as template defaults for future cycles
-    
-    // Example API call structure:
-    // POST /api/scholarships
-    // Body: { 
-    //   program: {name, description, currency, etc.}, 
-    //   firstCycle: {academicYear, amount, slots, dates},
-    //   criteria 
-    // }
-    
-    // navigate({ to: '/dev-office/scholarships' })
+
+    // Validation
+    if (!formData.sponsorId) {
+      toast.error('Please select a sponsor for this scholarship.')
+      return
+    }
+
+    try {
+      // Find selected sponsor details
+      const selectedSponsor = sponsors.find(s => s.id === formData.sponsorId)
+
+      // Transform form data to match API expectations
+      const scholarshipData = {
+        name: formData.name,
+        description: formData.description,
+        amount: Number(formData.amount),
+        sponsor: selectedSponsor?.name || 'Unknown Sponsor',
+        sponsorId: formData.sponsorId,
+        type: 'FULL', // Default type
+        applicationStartDate: formData.applicationStartDate,
+        applicationDeadline: formData.applicationEndDate,
+        eligibilityCriteria: criteria.map(c => `${c.type}: ${c.value}`),
+        maxRecipients: Number(formData.totalSlots),
+        // Additional fields that might be used by the backend
+        currency: formData.currency,
+        disbursementSchedule: formData.disbursementSchedule,
+        academicYear: formData.academicYear,
+        isRecurring: formData.isRecurring
+      }
+
+      await createScholarshipMutation.mutateAsync(scholarshipData)
+
+      toast.success('Scholarship created successfully!')
+      navigate({ to: '/dev-office/scholarships' })
+    } catch (error: any) {
+      console.error('Error creating scholarship:', error)
+      toast.error(error.message || 'Failed to create scholarship. Please try again.')
+    }
   }
 
   const criteriaTypes = [
@@ -234,6 +277,34 @@ export default function CreateScholarship() {
                         required
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <FieldTooltip content="Select the organization or individual sponsoring this scholarship. The sponsor provides the funding and may have specific requirements or preferences for recipient selection.">
+                      <Label htmlFor="sponsorId">Sponsor *</Label>
+                    </FieldTooltip>
+                    <Select
+                      value={formData.sponsorId}
+                      onValueChange={(value) => handleInputChange('sponsorId', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a sponsor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sponsors.filter(sponsor => sponsor.isActive).map(sponsor => (
+                          <SelectItem key={sponsor.id} value={sponsor.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{sponsor.name}</span>
+                              <span className="text-xs text-gray-500">({sponsor.type})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {sponsors.length === 0 && (
+                      <p className="text-sm text-amber-600">
+                        No active sponsors found. Please <Link to="/dev-office/sponsors" className="underline">create a sponsor</Link> first.
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <FieldTooltip content="A detailed description of the scholarship program including its purpose, goals, and what makes recipients eligible. This information helps students understand if they should apply and what the scholarship supports.">
@@ -441,7 +512,7 @@ export default function CreateScholarship() {
                             <p className="font-semibold mb-1">Automatic Cycle Management</p>
                             <p>
                               When you create this scholarship, the system will:
-                              <br />• Create the first cycle for {initialCycle.academicYear}
+                              <br />• Create the first cycle for {formData.academicYear}
                               <br />• Automatically generate the next cycle (2026-2027) using your template settings
                               <br />• Continue creating cycles each year until the end date (if specified)
                               <br />• Allow you to adjust individual cycles as needed
@@ -553,9 +624,22 @@ export default function CreateScholarship() {
                     Cancel
                   </Button>
                 </Link>
-                <Button type="submit" className="au-btn-primary">
-                  <Save className="w-4 h-4 mr-2" />
-                  Create Scholarship
+                <Button
+                  type="submit"
+                  className="au-btn-primary"
+                  disabled={createScholarshipMutation.isPending}
+                >
+                  {createScholarshipMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Create Scholarship
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

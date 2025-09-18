@@ -90,15 +90,32 @@ export function useCreateScholarship() {
  */
 export function useUpdateScholarship() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: any }) => 
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
       scholarshipsAPI.update(id, updates),
     onSuccess: (data) => {
       // Invalidate lists and update the specific scholarship
       queryClient.invalidateQueries({ queryKey: scholarshipKeys.lists() })
       queryClient.invalidateQueries({ queryKey: scholarshipKeys.active() })
       queryClient.setQueryData(scholarshipKeys.detail(data.id), data)
+    },
+  })
+}
+
+/**
+ * Hook for deleting scholarships (Admin only)
+ */
+export function useDeleteScholarship() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => scholarshipsAPI.delete(id),
+    onSuccess: (_, deletedId) => {
+      // Invalidate lists and remove the specific scholarship
+      queryClient.invalidateQueries({ queryKey: scholarshipKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: scholarshipKeys.active() })
+      queryClient.removeQueries({ queryKey: scholarshipKeys.detail(deletedId) })
     },
   })
 }

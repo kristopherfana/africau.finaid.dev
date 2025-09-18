@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { 
+import {
   Plus,
   Search,
   Filter,
@@ -33,7 +33,8 @@ import {
   MoreVertical,
   TrendingUp,
   Archive,
-  Copy
+  Copy,
+  Loader2
 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import {
@@ -44,112 +45,75 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useScholarships } from '@/hooks/use-scholarships'
+import type { Scholarship } from '@/types/scholarship'
 
-interface Scholarship {
+interface DisplayScholarship {
   id: string
   name: string
   sponsor: string
-  status: 'ACTIVE' | 'DRAFT' | 'INACTIVE' | 'ARCHIVED'
-  startYear: number
-  endYear?: number
-  totalBeneficiaries: number
-  currentYearBeneficiaries: number
+  status: 'DRAFT' | 'OPEN' | 'CLOSED' | 'SUSPENDED'
   amount: number
-  availableSlots: number
-  totalSlots: number
-  disbursedAmount: number
-  isRecurring: boolean
+  maxRecipients: number
+  currentApplications: number
+  applicationStartDate: string
+  applicationDeadline: string
+  createdAt: string
 }
 
-// Mock data
-const mockScholarships: Scholarship[] = [
-  {
-    id: '1',
-    name: 'Africa University Excellence Award',
-    sponsor: 'AU Foundation',
-    status: 'ACTIVE',
-    startYear: 2020,
-    endYear: undefined,
-    totalBeneficiaries: 450,
-    currentYearBeneficiaries: 120,
-    amount: 26000, // Current cycle amount
-    availableSlots: 5,  // Current cycle available
-    totalSlots: 55,     // Current cycle total
-    disbursedAmount: 3200000,
-    isRecurring: true
-  },
-  {
-    id: '2',
-    name: 'STEM Innovation Scholarship',
-    sponsor: 'Tech Foundation',
-    status: 'ACTIVE',
-    startYear: 2022,
-    endYear: 2027,
-    totalBeneficiaries: 280,
-    currentYearBeneficiaries: 95,
-    amount: 20000,
-    availableSlots: 15,
-    totalSlots: 100,
-    disbursedAmount: 1800000,
-    isRecurring: true
-  },
-  {
-    id: '3',
-    name: 'Women in Leadership Grant',
-    sponsor: 'Gender Equality Fund',
-    status: 'ACTIVE',
-    startYear: 2023,
-    endYear: 2028,
-    totalBeneficiaries: 150,
-    currentYearBeneficiaries: 75,
-    amount: 15000,
-    availableSlots: 25,
-    totalSlots: 75,
-    disbursedAmount: 750000,
-    isRecurring: true
-  },
-  {
-    id: '4',
-    name: 'Rural Development Scholarship',
-    sponsor: 'Community Partners',
-    status: 'DRAFT',
-    startYear: 2025,
-    endYear: 2030,
-    totalBeneficiaries: 0,
-    currentYearBeneficiaries: 0,
-    amount: 18000,
-    availableSlots: 50,
-    totalSlots: 50,
-    disbursedAmount: 0,
-    isRecurring: false
-  },
-]
+// Helper function to map API scholarship data to display format
+const mapScholarshipToDisplay = (scholarship: Scholarship): DisplayScholarship => ({
+  id: scholarship.id,
+  name: scholarship.name,
+  sponsor: scholarship.sponsor,
+  status: scholarship.status, // Direct mapping since both frontend and backend now have the same status values
+  amount: scholarship.amount,
+  maxRecipients: scholarship.maxRecipients,
+  currentApplications: scholarship.currentApplications,
+  applicationStartDate: scholarship.applicationStartDate,
+  applicationDeadline: scholarship.applicationDeadline,
+  createdAt: scholarship.createdAt
+})
 
 export default function ScholarshipManagement() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [yearFilter, setYearFilter] = useState<string>('all')
 
-  const filteredScholarships = mockScholarships.filter(scholarship => {
-    const matchesSearch = scholarship.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  // Fetch scholarships from backend
+  const { data: scholarshipsResponse, isLoading, error } = useScholarships({
+    search: searchTerm || undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+  })
+
+  const scholarships = scholarshipsResponse?.data || []
+  const displayScholarships = scholarships.map(mapScholarshipToDisplay)
+
+  const filteredScholarships = displayScholarships.filter(scholarship => {
+    const matchesSearch = searchTerm === '' ||
+                         scholarship.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          scholarship.sponsor.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || scholarship.status === statusFilter
-    const matchesYear = yearFilter === 'all' || 
-                       (yearFilter === 'current' && scholarship.startYear <= 2025 && (!scholarship.endYear || scholarship.endYear >= 2025))
-    
+    const currentYear = new Date().getFullYear()
+    const startYear = new Date(scholarship.applicationStartDate).getFullYear()
+    const endYear = new Date(scholarship.applicationDeadline).getFullYear()
+    const matchesYear = yearFilter === 'all' ||
+                       (yearFilter === 'current' && startYear <= currentYear && endYear >= currentYear) ||
+                       yearFilter === startYear.toString()
+
     return matchesSearch && matchesStatus && matchesYear
   })
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
+      case 'OPEN':
         return 'au-badge au-badge-success'
+      case 'CLOSED':
+        return 'au-badge au-badge-warning'
+      case 'SUSPENDED':
+        return 'au-badge au-badge-error'
       case 'DRAFT':
         return 'au-badge au-badge-secondary'
-      case 'INACTIVE':
-        return 'au-badge au-badge-warning'
-      case 'ARCHIVED':
-        return 'au-badge au-badge-error'
       default:
         return 'au-badge'
     }
@@ -195,20 +159,44 @@ export default function ScholarshipManagement() {
             <div className="container mx-auto">
               <div className="au-stat-grid">
                 <div className="au-stat-item">
-                  <span className="au-stat-number">{mockScholarships.filter(s => s.status === 'ACTIVE').length}</span>
+                  <span className="au-stat-number">
+                    {isLoading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      displayScholarships.filter(s => s.status === 'OPEN').length
+                    )}
+                  </span>
                   <span className="au-stat-label">Active Scholarships</span>
                 </div>
                 <div className="au-stat-item">
-                  <span className="au-stat-number">{mockScholarships.reduce((sum, s) => sum + s.currentYearBeneficiaries, 0)}</span>
-                  <span className="au-stat-label">Current Beneficiaries</span>
+                  <span className="au-stat-number">
+                    {isLoading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      displayScholarships.reduce((sum, s) => sum + s.currentApplications, 0)
+                    )}
+                  </span>
+                  <span className="au-stat-label">Total Applications</span>
                 </div>
                 <div className="au-stat-item">
-                  <span className="au-stat-number">${(mockScholarships.reduce((sum, s) => sum + s.disbursedAmount, 0) / 1000000).toFixed(1)}M</span>
-                  <span className="au-stat-label">Total Disbursed</span>
+                  <span className="au-stat-number">
+                    {isLoading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      `$${(displayScholarships.reduce((sum, s) => sum + s.amount, 0) / 1000).toFixed(0)}K`
+                    )}
+                  </span>
+                  <span className="au-stat-label">Total Scholarship Value</span>
                 </div>
                 <div className="au-stat-item">
-                  <span className="au-stat-number">{mockScholarships.reduce((sum, s) => sum + s.availableSlots, 0)}</span>
-                  <span className="au-stat-label">Available Slots</span>
+                  <span className="au-stat-number">
+                    {isLoading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      displayScholarships.reduce((sum, s) => sum + s.maxRecipients, 0)
+                    )}
+                  </span>
+                  <span className="au-stat-label">Total Slots</span>
                 </div>
               </div>
             </div>
@@ -238,10 +226,10 @@ export default function ScholarshipManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
                       <SelectItem value="DRAFT">Draft</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                      <SelectItem value="ARCHIVED">Archived</SelectItem>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="CLOSED">Closed</SelectItem>
+                      <SelectItem value="SUSPENDED">Suspended</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={yearFilter} onValueChange={setYearFilter}>
@@ -264,74 +252,93 @@ export default function ScholarshipManagement() {
             {/* Scholarships Table */}
             <PatternWrapper pattern="geometric" className="au-card">
               <div className="p-6">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Scholarship Name</TableHead>
-                        <TableHead>Sponsor</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Beneficiaries</TableHead>
-                        <TableHead>Available Slots</TableHead>
-                        <TableHead>Total Disbursed</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredScholarships.map((scholarship) => (
-                        <TableRow key={scholarship.id}>
-                          <TableCell className="font-medium">
-                            <div>
-                              <div className="font-semibold">{scholarship.name}</div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {scholarship.isRecurring && (
-                                  <span className="text-xs text-gray-500">Recurring</span>
-                                )}
-                                <span className="text-xs text-blue-600">6 cycles</span>
-                                <span className="text-xs text-gray-500">•</span>
-                                <span className="text-xs text-gray-500">Current: 2025-2026</span>
+                {error && (
+                  <div className="text-center py-8">
+                    <div className="text-red-600 mb-2">Error loading scholarships</div>
+                    <div className="text-sm text-gray-500">{error.message}</div>
+                  </div>
+                )}
+                {isLoading && (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                    <div className="text-gray-500">Loading scholarships...</div>
+                  </div>
+                )}
+                {!isLoading && !error && filteredScholarships.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500 mb-2">No scholarships found</div>
+                    <div className="text-sm text-gray-400">Try adjusting your search or filters</div>
+                  </div>
+                )}
+                {!isLoading && !error && filteredScholarships.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Scholarship Name</TableHead>
+                          <TableHead>Sponsor</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Application Period</TableHead>
+                          <TableHead>Applications</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Max Recipients</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredScholarships.map((scholarship) => (
+                          <TableRow key={scholarship.id}>
+                            <TableCell className="font-medium">
+                              <div>
+                                <div className="font-semibold">{scholarship.name}</div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-blue-600">ID: {scholarship.id.slice(0, 8)}...</span>
+                                  <span className="text-xs text-gray-500">•</span>
+                                  <span className="text-xs text-gray-500">
+                                    Created: {new Date(scholarship.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{scholarship.sponsor}</TableCell>
-                          <TableCell>
-                            <span className={getStatusBadge(scholarship.status)}>
-                              {scholarship.status}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <Calendar className="w-3 h-3 mr-1 text-gray-400" />
-                              <span className="text-sm">
-                                {scholarship.startYear} - {scholarship.endYear || 'Ongoing'}
+                            </TableCell>
+                            <TableCell>{scholarship.sponsor}</TableCell>
+                            <TableCell>
+                              <span className={getStatusBadge(scholarship.status)}>
+                                {scholarship.status}
                               </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div className="flex items-center">
+                                  <Calendar className="w-3 h-3 mr-1 text-gray-400" />
+                                  <span>Start: {new Date(scholarship.applicationStartDate).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center text-gray-500">
+                                  <Calendar className="w-3 h-3 mr-1" />
+                                  <span>End: {new Date(scholarship.applicationDeadline).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
                               <div className="flex items-center">
                                 <Users className="w-3 h-3 mr-1 text-gray-400" />
-                                <span className="font-semibold">{scholarship.currentYearBeneficiaries}</span>
-                                <span className="text-xs text-gray-500 ml-1">/ year</span>
+                                <span className="font-semibold">{scholarship.currentApplications}</span>
+                                <span className="text-xs text-gray-500 ml-1">applications</span>
                               </div>
-                              <span className="text-xs text-gray-500">Total: {scholarship.totalBeneficiaries}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <span className="font-semibold">{scholarship.availableSlots}</span>
-                              <span className="text-xs text-gray-500 ml-1">/ {scholarship.totalSlots}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <DollarSign className="w-3 h-3 text-gray-400" />
-                              <span className="font-semibold">
-                                ${(scholarship.disbursedAmount / 1000000).toFixed(1)}M
-                              </span>
-                            </div>
-                          </TableCell>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <DollarSign className="w-3 h-3 text-gray-400" />
+                                <span className="font-semibold">
+                                  ${scholarship.amount.toLocaleString()}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <span className="font-semibold">{scholarship.maxRecipients}</span>
+                                <span className="text-xs text-gray-500 ml-1">max</span>
+                              </div>
+                            </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -342,10 +349,12 @@ export default function ScholarshipManagement() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
+                                <Link to="/dev-office/scholarships/$id/" params={{ id: scholarship.id }}>
+                                  <DropdownMenuItem>
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                </Link>
                                 <DropdownMenuItem>
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit Scholarship
@@ -360,10 +369,12 @@ export default function ScholarshipManagement() {
                                   <TrendingUp className="w-4 h-4 mr-2" />
                                   View Analytics
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Copy className="w-4 h-4 mr-2" />
-                                  Duplicate
-                                </DropdownMenuItem>
+                                <Link to="/dev-office/scholarships/$id/" params={{ id: scholarship.id }}>
+                                  <DropdownMenuItem>
+                                    <Copy className="w-4 h-4 mr-2" />
+                                    Duplicate
+                                  </DropdownMenuItem>
+                                </Link>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-red-600">
                                   <Archive className="w-4 h-4 mr-2" />
@@ -373,10 +384,11 @@ export default function ScholarshipManagement() {
                             </DropdownMenu>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </div>
             </PatternWrapper>
           </div>

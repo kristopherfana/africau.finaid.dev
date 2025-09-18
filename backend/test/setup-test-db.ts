@@ -305,23 +305,34 @@ PORT=3001
         },
       });
       
-      // Create a test scholarship
+      // Create a test scholarship program and cycle
       if (sponsor) {
-        await prisma.scholarship.create({
+        const program = await prisma.scholarshipProgram.create({
           data: {
             sponsorId: sponsor.id,
-            name: 'Test Scholarship',
-            description: 'A test scholarship for testing purposes',
+            name: 'Test Scholarship Program',
+            description: 'A test scholarship program for testing purposes',
+            startYear: new Date().getFullYear(),
+            defaultAmount: 10000,
+            defaultSlots: 10,
+            createdBy: adminUser.id,
+          },
+        });
+
+        await prisma.scholarshipCycle.create({
+          data: {
+            programId: program.id,
+            academicYear: '2025-2026',
+            displayName: 'Test Scholarship 2025-2026',
             amount: 10000,
             currency: 'USD',
             totalSlots: 10,
             availableSlots: 10,
             applicationStartDate: new Date(),
             applicationEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            academicYear: '2025-2026',
             durationMonths: 12,
             disbursementSchedule: 'SEMESTER',
-            status: 'ACTIVE',
+            status: 'OPEN',
             createdBy: adminUser.id,
           },
         });

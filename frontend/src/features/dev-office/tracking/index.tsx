@@ -4,6 +4,7 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { PatternWrapper } from '@/components/au-showcase'
+import { useDashboardStats, useDemographicsData } from '@/hooks/use-dashboard-stats'
 import {
   Select,
   SelectContent,
@@ -117,8 +118,33 @@ export default function YearlyTracking() {
   const [selectedYear, setSelectedYear] = useState<string>('2025')
   const [comparisonYear, setComparisonYear] = useState<string>('2024')
 
-  const currentYearData = mockYearlyData.find(d => d.year.toString() === selectedYear) || mockYearlyData[0]
+  const { data: dashboardStats, isLoading: dashboardLoading, error: dashboardError } = useDashboardStats()
+  const { data: demographicsData, isLoading: demographicsLoading, error: demographicsError } = useDemographicsData()
+
+  // Create current year data from API
+  const currentYearData = {
+    year: parseInt(selectedYear),
+    totalScholarships: dashboardStats?.totalScholarships || 0,
+    totalBeneficiaries: demographicsData?.totalBeneficiaries || 0,
+    newBeneficiaries: dashboardStats?.monthlyStats?.newApplications || 0,
+    totalDisbursed: dashboardStats?.totalFunding || 0,
+    averageAmount: dashboardStats?.totalFunding && dashboardStats?.approvedApplications
+      ? Math.round(dashboardStats.totalFunding / dashboardStats.approvedApplications)
+      : 0,
+    completionRate: 85, // This would need a specific API endpoint
+    dropoutRate: 3,
+    maleCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.genderDistribution.male) / 100) : 0,
+    femaleCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.genderDistribution.female) / 100) : 0,
+    undergradCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.academicLevels.undergraduate) / 100) : 0,
+    mastersCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.academicLevels.masters) / 100) : 0,
+    phdCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.academicLevels.phd) / 100) : 0,
+  }
+
+  // For comparison data, we'll use the mock data for now (ideally this would be historical API data)
   const comparisonData = mockYearlyData.find(d => d.year.toString() === comparisonYear) || mockYearlyData[1]
+
+  const isLoading = dashboardLoading || demographicsLoading
+  const hasError = dashboardError || demographicsError
 
   const calculateChange = (current: number, previous: number) => {
     const change = ((current - previous) / previous) * 100
@@ -215,7 +241,31 @@ export default function YearlyTracking() {
 
           {/* Key Metrics */}
           <div className="container mx-auto px-8 pb-6">
-            <div className="au-grid au-grid-4">
+            {hasError ? (
+              <div className="au-grid au-grid-1">
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-8 text-center">
+                    <p className="text-red-600 mb-2">Error loading tracking data</p>
+                    <p className="text-gray-500 text-sm">Please try refreshing the page</p>
+                  </div>
+                </PatternWrapper>
+              </div>
+            ) : isLoading ? (
+              <div className="au-grid au-grid-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <PatternWrapper key={i} pattern="dots" className="au-card">
+                    <div className="p-6">
+                      <div className="animate-pulse">
+                        <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </PatternWrapper>
+                ))}
+              </div>
+            ) : (
+              <div className="au-grid au-grid-4">
               <PatternWrapper pattern="dots" className="au-card">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-2">
@@ -271,7 +321,8 @@ export default function YearlyTracking() {
                   </div>
                 </div>
               </PatternWrapper>
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Detailed Comparison Table */}

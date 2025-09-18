@@ -28,7 +28,7 @@ interface AuthState {
   resetAccessToken: () => void
   reset: () => void
   login: (email: string, password: string) => Promise<AuthUser | null>
-  register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<AuthUser | null>
+  register: (data: { email: string; password: string; firstName: string; lastName: string; role?: string }) => Promise<AuthUser | null>
   logout: () => void
   isAuthenticated: () => boolean
   auth: {
@@ -39,7 +39,7 @@ interface AuthState {
     resetAccessToken: () => void
     reset: () => void
     login: (email: string, password: string) => Promise<AuthUser | null>
-    register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<AuthUser | null>
+    register: (data: { email: string; password: string; firstName: string; lastName: string; role?: string }) => Promise<AuthUser | null>
     logout: () => void
     isAuthenticated: () => boolean
   }
@@ -114,7 +114,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
     }
   }
 
-  const registerHandler = async (data: { email: string; password: string; firstName: string; lastName: string }) => {
+  const registerHandler = async (data: { email: string; password: string; firstName: string; lastName: string; role?: string }) => {
     try {
       const response = await authAPI.register(data)
       

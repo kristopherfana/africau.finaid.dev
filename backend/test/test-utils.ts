@@ -37,9 +37,14 @@ export class TestUtils {
     }
     
     try {
-      await prisma.scholarship.deleteMany();
+      await prisma.scholarshipCycleCriteria.deleteMany();
+      await prisma.scholarshipProgramCriteria.deleteMany();
+      await prisma.studentRenewal.deleteMany();
+      await prisma.studentScholarship.deleteMany();
+      await prisma.scholarshipCycle.deleteMany();
+      await prisma.scholarshipProgram.deleteMany();
     } catch (e) {
-      console.log('Scholarship table not found, skipping...');
+      console.log('Scholarship tables not found, skipping...');
     }
     
     try {
@@ -203,21 +208,33 @@ export class TestUtils {
       });
     }
       
-    return await prisma.scholarship.create({
+    // Create scholarship program first
+    const program = await prisma.scholarshipProgram.create({
       data: {
         sponsorId: sponsor.id,
-        name: scholarshipData?.name || 'Test Scholarship',
-        description: scholarshipData?.description || 'Test scholarship description',
+        name: scholarshipData?.name || 'Test Scholarship Program',
+        description: scholarshipData?.description || 'Test scholarship program description',
+        startYear: new Date().getFullYear(),
+        defaultAmount: scholarshipData?.amount || 10000,
+        defaultSlots: scholarshipData?.totalSlots || 5,
+      },
+    });
+
+    // Create scholarship cycle
+    return await prisma.scholarshipCycle.create({
+      data: {
+        programId: program.id,
+        academicYear: '2025-2026',
+        displayName: (scholarshipData?.name || 'Test Scholarship') + ' 2025-2026',
         amount: scholarshipData?.amount || 10000,
         currency: 'USD',
         totalSlots: scholarshipData?.totalSlots || 5,
         availableSlots: scholarshipData?.availableSlots || 5,
         applicationStartDate: new Date(),
         applicationEndDate: scholarshipData?.applicationEndDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        academicYear: '2025-2026',
         durationMonths: 12,
         disbursementSchedule: 'SEMESTER',
-        status: 'ACTIVE',
+        status: 'OPEN',
       },
     });
   }
@@ -240,7 +257,7 @@ export class TestUtils {
         data: {
           applicationNumber,
           userId: studentUserId,
-          scholarshipId,
+          cycleId: scholarshipId,
           status: applicationData?.status || 'DRAFT',
           motivationLetter: applicationData?.personalStatement || 'Test personal statement',
           submittedAt: applicationData?.status === 'SUBMITTED' || applicationData?.status === 'UNDER_REVIEW' 

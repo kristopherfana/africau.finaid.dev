@@ -13,11 +13,11 @@ export enum ApplicationStatus {
 export class CreateApplicationDto {
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'ID of the scholarship being applied for',
+    description: 'ID of the scholarship cycle being applied for',
   })
   @IsUUID()
   @IsNotEmpty()
-  scholarshipId: string;
+  cycleId: string;
 
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174001',

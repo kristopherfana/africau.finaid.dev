@@ -16,11 +16,11 @@ export function ScholarshipCard({ scholarship, onViewDetails }: ScholarshipCardP
   const remainingSlots = scholarship.maxRecipients - scholarship.currentApplications
   const deadlineDate = new Date(scholarship.applicationDeadline)
   const currentDate = new Date()
-  const isDeadlinePassed = deadlineDate <= currentDate
   
-  // Check scholarship status from backend and deadline
-  const isScholarshipClosed = scholarship.status === 'CLOSED' || scholarship.status === 'SUSPENDED' || isDeadlinePassed
-  const canApply = !hasApplied && !isScholarshipClosed && remainingSlots > 0 && !isLoading
+  // Check scholarship status from backend (now dynamically calculated)
+  const isScholarshipClosed = scholarship.status === 'CLOSED' || scholarship.status === 'SUSPENDED'
+  const isScholarshipUpcoming = scholarship.status === 'DRAFT' // DRAFT now means upcoming
+  const canApply = !hasApplied && scholarship.status === 'OPEN' && remainingSlots > 0 && !isLoading
   
   const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24))
   const isUrgent = daysUntilDeadline <= 7 && daysUntilDeadline > 0 && !isScholarshipClosed
@@ -60,6 +60,8 @@ export function ScholarshipCard({ scholarship, onViewDetails }: ScholarshipCardP
               </span>
             ) : isScholarshipClosed ? (
               <span className="au-badge au-badge-danger">Closed</span>
+            ) : isScholarshipUpcoming ? (
+              <span className="au-badge au-badge-info">Opening Soon</span>
             ) : (
               <span className="au-badge au-badge-success">Open</span>
             )}
@@ -114,8 +116,9 @@ export function ScholarshipCard({ scholarship, onViewDetails }: ScholarshipCardP
             {!canApply && !hasApplied && (
               <div className="w-full py-2 px-4 bg-red-50 border border-red-200 text-red-600 rounded-md font-semibold text-center text-sm flex items-center justify-center">
                 <AlertCircle className="w-4 h-4 mr-2" />
-                {scholarship.status === 'CLOSED' || scholarship.status === 'SUSPENDED' ? 'Scholarship Closed' :
-                 isDeadlinePassed ? 'Deadline Passed' : 
+                {scholarship.status === 'CLOSED' ? 'Applications Closed' :
+                 scholarship.status === 'SUSPENDED' ? 'Scholarship Suspended' :
+                 scholarship.status === 'DRAFT' ? 'Opens ' + new Date(scholarship.applicationStartDate).toLocaleDateString() :
                  remainingSlots <= 0 ? 'No Slots Available' : 'Cannot Apply'}
               </div>
             )}

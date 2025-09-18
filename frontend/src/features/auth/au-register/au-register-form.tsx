@@ -15,6 +15,13 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useAuth } from '@/stores/authStore'
 import { toast } from 'sonner'
 
@@ -26,6 +33,9 @@ const formSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
+  role: z.enum(['STUDENT', 'ADMIN', 'SPONSOR', 'DEVELOPMENT_OFFICE'], {
+    required_error: 'Please select a role'
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -44,6 +54,7 @@ export function AURegisterForm({ className, ...props }: RegisterFormProps) {
       email: '',
       password: '',
       confirmPassword: '',
+      role: 'STUDENT' as const,
     },
   })
 
@@ -56,6 +67,7 @@ export function AURegisterForm({ className, ...props }: RegisterFormProps) {
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
+        role: data.role,
       })
       
       if (user) {
@@ -110,7 +122,31 @@ export function AURegisterForm({ className, ...props }: RegisterFormProps) {
             )}
           />
         </div>
-        
+
+        <FormField
+          control={form.control}
+          name='role'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="STUDENT">Student</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="DEVELOPMENT_OFFICE">Development Office</SelectItem>
+                  <SelectItem value="SPONSOR">Sponsor</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name='email'
@@ -172,9 +208,9 @@ export function AURegisterForm({ className, ...props }: RegisterFormProps) {
           </Link>
         </div>
 
-        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-          <p className="text-xs text-amber-800">
-            <strong>Note:</strong> Your role will be determined by your email address. Use student@, admin@, or sponsor@ prefix for different access levels.
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+          <p className="text-xs text-blue-800">
+            <strong>Note:</strong> Select the appropriate role above. Students can apply for scholarships, Admins can manage the system, Development Office can manage scholarships and view reports, and Sponsors can sponsor scholarships.
           </p>
         </div>
 

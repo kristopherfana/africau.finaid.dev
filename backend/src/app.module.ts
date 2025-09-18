@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { DocumentsModule } from './documents/documents.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
+import { SponsorsModule } from './sponsors/sponsors.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ReportsModule } from './reports/reports.module';
     DocumentsModule,
     NotificationsModule,
     ReportsModule,
+    SponsorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -34,6 +34,53 @@ export class ReportsController {
     return this.reportsService.getDashboardStats();
   }
 
+  @Get('demographics')
+  @ApiOperation({ summary: 'Get demographics data for dashboard' })
+  @ApiResponse({
+    status: 200,
+    description: 'Demographics data',
+    schema: {
+      example: {
+        genderDistribution: { female: 52, male: 48 },
+        academicLevels: { undergraduate: 68, masters: 24, phd: 8 },
+        topPrograms: [
+          { name: 'Engineering', percentage: 28 },
+          { name: 'Business', percentage: 22 },
+          { name: 'Medicine', percentage: 18 }
+        ],
+        totalFunding: 2500000,
+        totalBeneficiaries: 450
+      }
+    }
+  })
+  async getDemographicsData() {
+    return this.reportsService.getDemographicsData();
+  }
+
+  @Get('featured-scholarships')
+  @ApiOperation({ summary: 'Get featured scholarships for dashboard' })
+  @ApiResponse({
+    status: 200,
+    description: 'Featured scholarships data',
+    schema: {
+      example: [
+        {
+          id: '1',
+          title: 'Africa University Excellence Award',
+          description: 'Multi-year comprehensive scholarship',
+          beneficiaries: 450,
+          totalApplicants: 1200,
+          totalDisbursed: 3200000,
+          startYear: 2020,
+          status: 'ACTIVE'
+        }
+      ]
+    }
+  })
+  async getFeaturedScholarships() {
+    return this.reportsService.getFeaturedScholarships();
+  }
+
   @Get('applications-report')
   @ApiOperation({ summary: 'Generate applications report' })
   @ApiQuery({ name: 'startDate', required: false, type: String })
@@ -127,5 +174,29 @@ export class ReportsController {
     @Res() res?: Response,
   ) {
     return this.reportsService.getFinancialReport({ year, format }, res);
+  }
+
+  @Get('beneficiaries-report')
+  @ApiOperation({ summary: 'Generate beneficiaries report' })
+  @ApiQuery({ name: 'scholarshipId', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: ['APPROVED'] })
+  @ApiQuery({ name: 'format', required: false, enum: ['json', 'csv', 'xlsx'], example: 'json' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'searchTerm', required: false, type: String, description: 'Search term for beneficiary name or email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Beneficiaries report data',
+  })
+  async getBeneficiariesReport(
+    @Query('scholarshipId') scholarshipId?: string,
+    @Query('status') status?: string,
+    @Query('format') format: string = 'json',
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+    @Query('searchTerm') searchTerm?: string,
+  ) {
+    const beneficiaryReport = await this.reportsService.getBeneficiariesReport({ scholarshipId, status, format, page, pageSize, searchTerm });
+    return beneficiaryReport;
   }
 }

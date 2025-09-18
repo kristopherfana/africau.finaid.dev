@@ -222,13 +222,8 @@ export const getNavDataForRole = (role: UserRole, user: any): SidebarData => {
           ],
         },
         {
-          title: 'Applications',
+          title: 'Student Support',
           items: [
-            {
-              title: 'Review Applications',
-              url: '/dev-office/applications',
-              icon: ClipboardCheck,
-            },
             {
               title: 'Beneficiaries',
               url: '/dev-office/beneficiaries',

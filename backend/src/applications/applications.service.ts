@@ -19,8 +19,8 @@ export class ApplicationsService {
     if (!applicantId) {
       throw new BadRequestException('Applicant ID is required');
     }
-    if (!createApplicationDto.scholarshipId) {
-      throw new BadRequestException('Scholarship ID is required');
+    if (!createApplicationDto.cycleId) {
+      throw new BadRequestException('Cycle ID is required');
     }
 
     // Create application in database
@@ -28,7 +28,7 @@ export class ApplicationsService {
       data: {
         applicationNumber,
         userId: applicantId,
-        scholarshipId: createApplicationDto.scholarshipId,
+        cycleId: createApplicationDto.cycleId,
         motivationLetter: createApplicationDto.personalStatement || (createApplicationDto as any).motivationLetter || '',
         additionalInfo: JSON.stringify({
           academicInfo: createApplicationDto.academicInfo || {},
@@ -42,7 +42,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
       },
     });
 
@@ -66,7 +66,7 @@ export class ApplicationsService {
 
   async findAll(filters: {
     status?: string;
-    scholarshipId?: string;
+    cycleId?: string;
     applicantId?: string;
     page?: number;
     limit?: number;
@@ -76,8 +76,8 @@ export class ApplicationsService {
     if (filters.status) {
       where.status = filters.status;
     }
-    if (filters.scholarshipId) {
-      where.scholarshipId = filters.scholarshipId;
+    if (filters.cycleId) {
+      where.cycleId = filters.cycleId;
     }
     if (filters.applicantId) {
       where.userId = filters.applicantId;
@@ -91,7 +91,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
         documents: {
           include: {
             document: true,
@@ -117,7 +117,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
         documents: {
           include: {
             document: true,
@@ -141,7 +141,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
         documents: {
           include: {
             document: true,
@@ -191,7 +191,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
         documents: {
           include: {
             document: true,
@@ -225,7 +225,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
         documents: {
           include: {
             document: true,
@@ -261,7 +261,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
         documents: {
           include: {
             document: true,
@@ -294,7 +294,7 @@ export class ApplicationsService {
             profile: true,
           },
         },
-        scholarship: true,
+        cycle: true,
         documents: {
           include: {
             document: true,
@@ -331,8 +331,8 @@ export class ApplicationsService {
     return {
       id: application.id,
       applicationNumber: application.applicationNumber, // For test compatibility
-      scholarshipId: application.scholarshipId,
-      scholarshipName: application.scholarship.name,
+      cycleId: application.cycleId,
+      cycleName: application.cycle.displayName || application.cycle.academicYear,
       applicantId: application.userId,
       userId: application.userId, // For test compatibility
       applicantName: fullName,

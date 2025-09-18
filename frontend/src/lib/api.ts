@@ -232,9 +232,9 @@ export const applicationsAPI = {
 
 // Documents API
 export const documentsAPI = {
-  getAll: (params?: { documentType?: string; applicationId?: string }): Promise<any[]> => 
+  getAll: (params?: { documentType?: string; applicationId?: string }): Promise<any[]> =>
     apiClient.get('/documents', { params }),
-  getById: (id: string): Promise<any> => 
+  getById: (id: string): Promise<any> =>
     apiClient.get(`/documents/${id}`),
   download: async (id: string): Promise<{ document: any; url: string }> => {
     // For now, return a mock download URL since backend returns mock data
@@ -242,6 +242,88 @@ export const documentsAPI = {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
     return { document, url: `${API_BASE_URL}/documents/${id}/download` }
   },
-  delete: (id: string): Promise<void> => 
+  delete: (id: string): Promise<void> =>
     apiClient.delete(`/documents/${id}`),
+}
+
+// Reports API
+export const reportsAPI = {
+  getDashboardStats: (): Promise<{
+    totalScholarships: number
+    totalApplications: number
+    approvedApplications: number
+    pendingApplications: number
+    totalUsers: number
+    activeUsers: number
+    totalFunding: number
+    monthlyStats: {
+      newApplications: number
+      approvedThisMonth: number
+    }
+  }> => apiClient.get('/reports/dashboard-stats'),
+
+  getDemographicsData: (): Promise<{
+    genderDistribution: { female: number; male: number }
+    academicLevels: { undergraduate: number; masters: number; phd: number }
+    topPrograms: { name: string; percentage: number }[]
+    totalFunding: number
+    totalBeneficiaries: number
+  }> => apiClient.get('/reports/demographics'),
+
+  getFeaturedScholarships: (): Promise<{
+    id: string
+    title: string
+    description: string
+    beneficiaries: number
+    totalApplicants: number
+    totalDisbursed: number
+    startYear: number
+    status: string
+  }[]> => apiClient.get('/reports/featured-scholarships'),
+
+  getApplicationsReport: (params?: {
+    startDate?: string
+    endDate?: string
+    scholarshipId?: string
+    status?: string
+    format?: string
+  }): Promise<any> => apiClient.get('/reports/applications-report', { params }),
+
+  getScholarshipsReport: (params?: {
+    startDate?: string
+    endDate?: string
+    format?: string
+  }): Promise<any> => apiClient.get('/reports/scholarships-report', { params }),
+
+  getFinancialReport: (params?: {
+    year?: number
+    format?: string
+  }): Promise<{
+    totalFunding: number
+    totalAwarded: number
+    totalDisbursed: number
+    pendingAmount: number
+    monthlyBreakdown: Array<{
+      month: string
+      funded: number
+      awarded: number
+      disbursed: number
+    }>
+    sponsorBreakdown: Array<{
+      sponsorName: string
+      amount: number
+      percentage: number
+    }>
+    programBreakdown: Array<{
+      programName: string
+      amount: number
+      recipientCount: number
+    }>
+  }> => apiClient.get('/reports/financial-report', { params }),
+
+  getUsersReport: (params?: {
+    role?: string
+    department?: string
+    format?: string
+  }): Promise<any> => apiClient.get('/reports/users-report', { params }),
 }

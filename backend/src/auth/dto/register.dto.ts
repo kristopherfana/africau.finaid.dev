@@ -6,6 +6,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   SPONSOR = 'SPONSOR',
   REVIEWER = 'REVIEWER',
+  DEVELOPMENT_OFFICE = 'DEVELOPMENT_OFFICE',
 }
 
 export class RegisterDto {
