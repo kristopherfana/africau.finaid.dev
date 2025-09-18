@@ -1,15 +1,22 @@
-import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeft,
+  Award,
+  BarChart3,
+  Building2,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Copy,
+  Download,
+  Edit,
+  FileText,
+  Loader2,
+  Settings,
+  TrendingUp,
+  Users
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -18,58 +25,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { PatternWrapper } from '@/components/au-showcase'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import {
-  ArrowLeft,
-  Edit,
-  Calendar,
-  DollarSign,
-  Users,
-  Award,
-  TrendingUp,
-  FileText,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Building2,
-  Download,
-  Settings,
-  Loader2,
-  AlertTriangle,
-  Eye,
-  Copy,
-  BarChart3
-} from 'lucide-react'
-import { Link, useParams, useNavigate } from '@tanstack/react-router'
-import { useScholarship, useUpdateScholarship, useDeleteScholarship, useCreateScholarship } from '@/hooks/use-scholarships'
+import { useCreateScholarship, useDeleteScholarship, useScholarship, useUpdateScholarship } from '@/hooks/use-scholarships'
+import { useEffect, useState } from 'react'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Header } from '@/components/layout/header'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Main } from '@/components/layout/main'
+import { PatternWrapper } from '@/components/au-showcase'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Textarea } from '@/components/ui/textarea'
+import { ThemeSwitch } from '@/components/theme-switch'
+import { toast } from 'sonner'
 
 export default function ScholarshipDetail() {
   const { id } = useParams({ from: '/_authenticated/dev-office/scholarships/$id/' })

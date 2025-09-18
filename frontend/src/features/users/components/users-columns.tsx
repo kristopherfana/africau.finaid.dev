@@ -1,12 +1,14 @@
-import { ColumnDef } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
+import { callTypes, userTypes } from '../data/data'
+
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import LongText from '@/components/long-text'
-import { callTypes, userTypes } from '../data/data'
-import { User } from '../data/schema'
+import { ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { DataTableRowActions } from './data-table-row-actions'
+import LongText from '@/components/long-text'
+import { User } from '../data/schema'
+import { ColumnDef } from '@tanstack/react-table'
+import { cn } from '@/lib/utils'
 
 export const columns: ColumnDef<User>[] = [
   {

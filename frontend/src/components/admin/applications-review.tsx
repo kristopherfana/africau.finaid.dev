@@ -13,6 +13,7 @@ import { useAuth } from '@/stores/authStore'
 import { Calendar, DollarSign, User, FileText, CheckCircle, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { ApplicationStatus } from '@/types/application'
 
 const reviewSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED']),
@@ -25,7 +26,7 @@ type ReviewFormData = z.infer<typeof reviewSchema>
 export function ApplicationsReview() {
   const { user } = useAuth()
   const { data, isLoading, error } = useApplicationsForReview({
-    status: 'UNDER_REVIEW',
+    status: ApplicationStatus.UNDER_REVIEW,
     page: 1,
     limit: 20
   })
@@ -68,7 +69,7 @@ export function ApplicationsReview() {
     return <div className="text-red-500 p-4">Error loading applications: {error.message}</div>
   }
 
-  if (!data?.data.length) {
+  if (!data?.length) {
     return (
       <div className="text-center p-8">
         <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -85,12 +86,12 @@ export function ApplicationsReview() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Applications for Review</h2>
         <Badge variant="outline">
-          {data.data.length} Pending Review
+          {data.length} Pending Review
         </Badge>
       </div>
 
       <div className="grid gap-6">
-        {data.data.map((application) => (
+        {data.map((application) => (
           <Card key={application.id}>
             <CardHeader>
               <div className="flex justify-between items-start">

@@ -1,31 +1,32 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/stores/authStore'
-import { usersAPI } from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ProfileImageUpload } from '@/components/profile-image-upload'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { UserResponseDto, UserRole } from '@/types/user'
 import {
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  MapPin,
-  GraduationCap,
-  BookOpen,
   Award,
-  Edit,
-  Shield,
-  Eye,
+  BookOpen,
   Building2,
-  Star,
+  Calendar,
   Clock,
   DollarSign,
+  Edit,
+  Eye,
+  GraduationCap,
+  Mail,
+  MapPin,
+  Phone,
+  Shield,
+  Star,
+  User,
   Users,
 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { UserResponseDto, UserRole } from '@/types/user'
+import { useEffect, useState } from 'react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ProfileImageUpload } from '@/components/profile-image-upload'
+import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
+import { useAuth } from '@/stores/authStore'
+import { usersAPI } from '@/lib/api'
 
 interface ProfileOverviewProps {
   onEditClick: () => void
@@ -43,7 +44,6 @@ export function ProfileOverview({ onEditClick }: ProfileOverviewProps) {
           const profileData = await usersAPI.getProfile()
           setProfile(profileData)
         } catch (error) {
-          console.error('Failed to load profile:', error)
           toast.error('Failed to load profile data')
         } finally {
           setIsLoading(false)

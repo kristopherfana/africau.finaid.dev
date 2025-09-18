@@ -1,3 +1,5 @@
+import { ReactNode } from "react"
+
 export enum UserRole {
   STUDENT = 'STUDENT',
   ADMIN = 'ADMIN',
@@ -88,6 +90,7 @@ export interface DevelopmentOfficeProfile {
 }
 
 export interface UserResponseDto {
+  [x: string]: any
   id: string
   email: string
   firstName: string

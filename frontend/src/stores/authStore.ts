@@ -3,6 +3,9 @@ import { create } from 'zustand'
 import { authAPI } from '@/lib/api'
 import { UserRole } from '@/types/user'
 
+// Re-export UserRole for other components
+export { UserRole } from '@/types/user'
+
 const ACCESS_TOKEN = 'auth_token'
 
 

@@ -1,0 +1,45 @@
+# Elastic Beanstalk ignore file
+# Don't upload these files/directories to EB
+
+# Dependencies
+node_modules/
+
+# Development files
+.env
+.env.local
+.env.development
+test/
+*.test.ts
+*.spec.ts
+
+# Build artifacts
+dist/
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (local development)
+uploads/
+
+# Test database
+test.db
+dev.db
+
+# Documentation
+README.md
+docs/

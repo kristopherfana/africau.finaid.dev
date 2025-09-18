@@ -1,20 +1,22 @@
-import { StrictMode } from 'react'
-import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
+import './index.css'
+
 import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/authStore'
-import { handleServerError } from '@/utils/handle-server-error'
+
+import { AxiosError } from 'axios'
 import { FontProvider } from './context/font-context'
+import ReactDOM from 'react-dom/client'
+import { StrictMode } from 'react'
 import { ThemeProvider } from './context/theme-context'
-import './index.css'
+import { handleServerError } from '@/utils/handle-server-error'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/authStore'
 
 const queryClient = new QueryClient({
   defaultOptions: {

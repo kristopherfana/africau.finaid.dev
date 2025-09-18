@@ -51,7 +51,7 @@ export function UserApplications() {
     return <div className="text-red-500 p-4">Error loading applications: {error.message}</div>
   }
 
-  if (!data?.data.length) {
+  if (!data?.length) {
     return (
       <div className="text-center p-8">
         <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -74,7 +74,7 @@ export function UserApplications() {
               <p className="text-gray-600 mt-1">Track the progress of all your scholarship applications</p>
             </div>
             <span className="au-badge au-badge-info text-lg px-4 py-2">
-              {data.data.length} {data.data.length === 1 ? 'Application' : 'Applications'}
+              {data.length} {data.length === 1 ? 'Application' : 'Applications'}
             </span>
           </div>
         </div>
@@ -82,7 +82,7 @@ export function UserApplications() {
 
       {/* Applications List */}
       <div className="space-y-6">
-        {data.data.map((application) => (
+        {data.map((application) => (
           <div key={application.id} className="au-card hover:shadow-lg transition-shadow">
             <div className="p-6">
               {/* Application Header */}
@@ -225,13 +225,7 @@ export function UserApplications() {
       </div>
 
       {/* Summary Stats */}
-      {data?.pagination && data.pagination.total > data.data.length && (
-        <div className="text-center">
-          <span className="text-sm text-gray-500">
-            Showing {data.data.length} of {data.pagination.total} applications
-          </span>
-        </div>
-      )}
+      {/* Pagination would go here if needed */}
     </div>
   )
 }
