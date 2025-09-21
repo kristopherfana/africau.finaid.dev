@@ -9,11 +9,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Note: SQLite doesn't support enums, so we use String fields with constraints
+// PostgreSQL supports native enums, but using String fields for simplicity
 
 // Core Models
 model User {

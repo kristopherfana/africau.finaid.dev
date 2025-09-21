@@ -20,17 +20,15 @@ async function bootstrap() {
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe());
 
-  // Swagger documentation (only in development)
-  if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('AU Scholarship System API')
-      .setDescription('Africa University Scholarship Management System API')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api', app, document);
-  }
+  // Swagger documentation
+  const config = new DocumentBuilder()
+    .setTitle('AU Scholarship System API')
+    .setDescription('Africa University Scholarship Management System API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
