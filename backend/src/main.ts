@@ -9,7 +9,7 @@ async function bootstrap() {
 
   // Configure CORS based on environment
   const corsOrigins = process.env.NODE_ENV === 'production'
-    ? [process.env.CORS_ORIGIN || 'https://your-frontend-domain.com']
+    ? [process.env.CORS_ORIGIN || 'https://africau-finaid-prod.vercel.app/', 'http://localhost:5173']
     : ['http://localhost:5173', 'http://localhost:3000'];
 
   app.enableCors({
