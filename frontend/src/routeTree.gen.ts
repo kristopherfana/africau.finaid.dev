@@ -56,6 +56,7 @@ import { Route as AuthenticatedDocumentsViewDocumentIdRouteImport } from './rout
 import { Route as AuthenticatedDevOfficeScholarshipsCreateRouteImport } from './routes/_authenticated/dev-office/scholarships/create'
 import { Route as AuthenticatedDevOfficeScholarshipsIdIndexRouteImport } from './routes/_authenticated/dev-office/scholarships/$id/index'
 import { Route as AuthenticatedDevOfficeScholarshipsIdCyclesRouteImport } from './routes/_authenticated/dev-office/scholarships/$id/cycles'
+import { Route as AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRouteImport } from './routes/_authenticated/dev-office/scholarships/$id/cycles/$cycleId'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -322,6 +323,12 @@ const AuthenticatedDevOfficeScholarshipsIdCyclesRoute =
     path: '/dev-office/scholarships/$id/cycles',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute =
+  AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRouteImport.update({
+    id: '/$cycleId',
+    path: '/$cycleId',
+    getParentRoute: () => AuthenticatedDevOfficeScholarshipsIdCyclesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -368,8 +375,9 @@ export interface FileRoutesByFullPath {
   '/dev-office/sponsors': typeof AuthenticatedDevOfficeSponsorsIndexRoute
   '/dev-office/tracking': typeof AuthenticatedDevOfficeTrackingIndexRoute
   '/scholarships/$id': typeof AuthenticatedScholarshipsIdIndexRoute
-  '/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
+  '/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRouteWithChildren
   '/dev-office/scholarships/$id': typeof AuthenticatedDevOfficeScholarshipsIdIndexRoute
+  '/dev-office/scholarships/$id/cycles/$cycleId': typeof AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
@@ -414,8 +422,9 @@ export interface FileRoutesByTo {
   '/dev-office/sponsors': typeof AuthenticatedDevOfficeSponsorsIndexRoute
   '/dev-office/tracking': typeof AuthenticatedDevOfficeTrackingIndexRoute
   '/scholarships/$id': typeof AuthenticatedScholarshipsIdIndexRoute
-  '/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
+  '/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRouteWithChildren
   '/dev-office/scholarships/$id': typeof AuthenticatedDevOfficeScholarshipsIdIndexRoute
+  '/dev-office/scholarships/$id/cycles/$cycleId': typeof AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -464,8 +473,9 @@ export interface FileRoutesById {
   '/_authenticated/dev-office/sponsors/': typeof AuthenticatedDevOfficeSponsorsIndexRoute
   '/_authenticated/dev-office/tracking/': typeof AuthenticatedDevOfficeTrackingIndexRoute
   '/_authenticated/scholarships/$id/': typeof AuthenticatedScholarshipsIdIndexRoute
-  '/_authenticated/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
+  '/_authenticated/dev-office/scholarships/$id/cycles': typeof AuthenticatedDevOfficeScholarshipsIdCyclesRouteWithChildren
   '/_authenticated/dev-office/scholarships/$id/': typeof AuthenticatedDevOfficeScholarshipsIdIndexRoute
+  '/_authenticated/dev-office/scholarships/$id/cycles/$cycleId': typeof AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -516,6 +526,7 @@ export interface FileRouteTypes {
     | '/scholarships/$id'
     | '/dev-office/scholarships/$id/cycles'
     | '/dev-office/scholarships/$id'
+    | '/dev-office/scholarships/$id/cycles/$cycleId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -562,6 +573,7 @@ export interface FileRouteTypes {
     | '/scholarships/$id'
     | '/dev-office/scholarships/$id/cycles'
     | '/dev-office/scholarships/$id'
+    | '/dev-office/scholarships/$id/cycles/$cycleId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -611,6 +623,7 @@ export interface FileRouteTypes {
     | '/_authenticated/scholarships/$id/'
     | '/_authenticated/dev-office/scholarships/$id/cycles'
     | '/_authenticated/dev-office/scholarships/$id/'
+    | '/_authenticated/dev-office/scholarships/$id/cycles/$cycleId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -958,6 +971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dev-office/scholarships/$id/cycles/$cycleId': {
+      id: '/_authenticated/dev-office/scholarships/$id/cycles/$cycleId'
+      path: '/$cycleId'
+      fullPath: '/dev-office/scholarships/$id/cycles/$cycleId'
+      preLoaderRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRouteImport
+      parentRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
+    }
   }
 }
 
@@ -1001,6 +1021,21 @@ const AuthenticatedApplicationsRouteWithChildren =
     AuthenticatedApplicationsRouteChildren,
   )
 
+interface AuthenticatedDevOfficeScholarshipsIdCyclesRouteChildren {
+  AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute
+}
+
+const AuthenticatedDevOfficeScholarshipsIdCyclesRouteChildren: AuthenticatedDevOfficeScholarshipsIdCyclesRouteChildren =
+  {
+    AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute:
+      AuthenticatedDevOfficeScholarshipsIdCyclesCycleIdRoute,
+  }
+
+const AuthenticatedDevOfficeScholarshipsIdCyclesRouteWithChildren =
+  AuthenticatedDevOfficeScholarshipsIdCyclesRoute._addFileChildren(
+    AuthenticatedDevOfficeScholarshipsIdCyclesRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRouteWithChildren
@@ -1029,7 +1064,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDevOfficeSponsorsIndexRoute: typeof AuthenticatedDevOfficeSponsorsIndexRoute
   AuthenticatedDevOfficeTrackingIndexRoute: typeof AuthenticatedDevOfficeTrackingIndexRoute
   AuthenticatedScholarshipsIdIndexRoute: typeof AuthenticatedScholarshipsIdIndexRoute
-  AuthenticatedDevOfficeScholarshipsIdCyclesRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesRoute
+  AuthenticatedDevOfficeScholarshipsIdCyclesRoute: typeof AuthenticatedDevOfficeScholarshipsIdCyclesRouteWithChildren
   AuthenticatedDevOfficeScholarshipsIdIndexRoute: typeof AuthenticatedDevOfficeScholarshipsIdIndexRoute
 }
 
@@ -1071,7 +1106,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDevOfficeTrackingIndexRoute,
   AuthenticatedScholarshipsIdIndexRoute: AuthenticatedScholarshipsIdIndexRoute,
   AuthenticatedDevOfficeScholarshipsIdCyclesRoute:
-    AuthenticatedDevOfficeScholarshipsIdCyclesRoute,
+    AuthenticatedDevOfficeScholarshipsIdCyclesRouteWithChildren,
   AuthenticatedDevOfficeScholarshipsIdIndexRoute:
     AuthenticatedDevOfficeScholarshipsIdIndexRoute,
 }

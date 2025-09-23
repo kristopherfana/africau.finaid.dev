@@ -65,17 +65,17 @@ export class ScholarshipsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ): Promise<{ data: ScholarshipResponseDto[], pagination: any }> {
-    const scholarships = await this.scholarshipsService.findAll({ 
-      status, 
-      type, 
+    const scholarships = await this.scholarshipsService.findAll({
+      status,
+      type,
       page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined 
+      limit: limit ? parseInt(limit, 10) : undefined
     });
-    
+
     // Return paginated format for frontend, but keep service returning array for backward compatibility
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    
+
     return {
       data: scholarships,
       pagination: {
@@ -85,6 +85,28 @@ export class ScholarshipsController {
         totalPages: Math.ceil(scholarships.length / limitNum)
       }
     };
+  }
+
+  @Get('cycles/all')
+  @ApiOperation({ summary: 'Get all cycles across all scholarship programs' })
+  @ApiQuery({ name: 'status', required: false, enum: ['OPEN', 'CLOSED', 'SUSPENDED', 'DRAFT'] })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all scholarship cycles',
+    type: [ScholarshipResponseDto],
+  })
+  async findAllCycles(
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<{ data: ScholarshipResponseDto[], pagination: any }> {
+    return this.scholarshipsService.findAllCycles({
+      status,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined
+    });
   }
 
   @Get(':id')
@@ -118,7 +140,7 @@ export class ScholarshipsController {
     return this.scholarshipsService.update(id, updateScholarshipDto);
   }
 
-  @Get('programs/:programId/cycles')
+  @Get(':programId/cycles')
   @ApiOperation({ summary: 'Get all cycles for a scholarship program' })
   @ApiParam({ name: 'programId', description: 'Scholarship Program ID' })
   @ApiResponse({
@@ -129,6 +151,22 @@ export class ScholarshipsController {
   @ApiResponse({ status: 404, description: 'Program not found' })
   async findCyclesByProgram(@Param('programId') programId: string): Promise<ScholarshipResponseDto[]> {
     return this.scholarshipsService.findCyclesByProgram(programId);
+  }
+
+  @Post(':programId/cycles')
+  @Roles(UserRole.DEVELOPMENT_OFFICE, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create a new cycle for an existing scholarship program' })
+  @ApiParam({ name: 'programId', description: 'Scholarship Program ID' })
+  @ApiResponse({
+    status: 201,
+    description: 'Cycle created successfully',
+    type: ScholarshipResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 404, description: 'Program not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async createCycleForProgram(@Param('programId') programId: string, @Body() createCycleDto: any): Promise<ScholarshipResponseDto> {
+    return this.scholarshipsService.createCycleForProgram(programId, createCycleDto);
   }
 
   @Delete(':id')

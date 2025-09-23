@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { CreateScholarshipDto, ScholarshipStatus, ScholarshipType } from './dto/create-scholarship.dto';
-import { UpdateScholarshipDto } from './dto/update-scholarship.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+
+import { PrismaService } from '../prisma/prisma.service';
 import { ScholarshipResponseDto } from './dto/scholarship-response.dto';
+import { UpdateScholarshipDto } from './dto/update-scholarship.dto';
 
 @Injectable()
 export class ScholarshipsService {
@@ -131,17 +132,70 @@ export class ScholarshipsService {
     limit?: number;
   }): Promise<ScholarshipResponseDto[]> {
     const where: any = {};
-    
+
+    // Filter programs based on their cycles' status if provided
     if (filters.status) {
       const statusMapping = {
-        'OPEN': 'ACTIVE',
-        'CLOSED': 'INACTIVE',
-        'SUSPENDED': 'DRAFT'
+        'OPEN': 'OPEN',
+        'CLOSED': 'CLOSED',
+        'SUSPENDED': 'SUSPENDED',
+        'DRAFT': 'DRAFT'
       };
-      where.status = statusMapping[filters.status] || filters.status;
+      const mappedStatus = statusMapping[filters.status] || filters.status;
+      where.cycles = {
+        some: {
+          status: mappedStatus
+        }
+      };
     }
 
-    const scholarships = await this.prisma.scholarshipCycle.findMany({
+    const programs = await this.prisma.scholarshipProgram.findMany({
+      where,
+      include: {
+        sponsor: true,
+        cycles: {
+          include: {
+            applications: true,
+            criteria: true
+          },
+          orderBy: {
+            academicYear: 'desc'
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip: filters.page && filters.limit ? (filters.page - 1) * filters.limit : undefined,
+      take: filters.limit,
+    });
+
+    return programs.map(program => this.mapProgramToResponseDto(program));
+  }
+
+  async findAllCycles(filters: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: ScholarshipResponseDto[], pagination: any }> {
+    const where: any = {};
+
+    // Filter cycles by status if provided
+    if (filters.status) {
+      const statusMapping = {
+        'OPEN': 'OPEN',
+        'CLOSED': 'CLOSED',
+        'SUSPENDED': 'SUSPENDED',
+        'DRAFT': 'DRAFT'
+      };
+      const mappedStatus = statusMapping[filters.status] || filters.status;
+      where.status = mappedStatus;
+    }
+
+    // Get total count for pagination
+    const total = await this.prisma.scholarshipCycle.count({ where });
+
+    const cycles = await this.prisma.scholarshipCycle.findMany({
       where,
       include: {
         program: {
@@ -152,43 +206,63 @@ export class ScholarshipsService {
         applications: true,
         criteria: true
       },
-      orderBy: {
-        createdAt: 'desc'
-      },
+      orderBy: [
+        { academicYear: 'desc' },
+        { createdAt: 'desc' }
+      ],
       skip: filters.page && filters.limit ? (filters.page - 1) * filters.limit : undefined,
       take: filters.limit,
     });
 
-    return scholarships.map(scholarship => this.mapToResponseDto(scholarship));
+    const pageNum = filters.page || 1;
+    const limitNum = filters.limit || 20;
+
+    return {
+      data: cycles.map(cycle => this.mapToResponseDto(cycle)),
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    };
   }
 
   async findOne(id: string): Promise<ScholarshipResponseDto> {
-    const scholarship = await this.prisma.scholarshipCycle.findUnique({
+    const program = await this.prisma.scholarshipProgram.findUnique({
       where: { id },
       include: {
-        program: {
+        sponsor: true,
+        cycles: {
           include: {
-            sponsor: true
+            applications: true,
+            criteria: true
+          },
+          orderBy: {
+            academicYear: 'desc'
           }
-        },
-        applications: true,
-        criteria: true
+        }
       }
     });
 
-    if (!scholarship) {
-      throw new NotFoundException(`Scholarship with ID ${id} not found`);
+    if (!program) {
+      throw new NotFoundException(`Scholarship program with ID ${id} not found`);
     }
 
-    return this.mapToResponseDto(scholarship);
+    return this.mapProgramToResponseDto(program);
   }
 
   async findCyclesByProgram(programId: string): Promise<ScholarshipResponseDto[]> {
     // First verify the program exists
+    console.log(programId);
+
     const program = await this.prisma.scholarshipProgram.findUnique({
       where: { id: programId },
       include: { sponsor: true }
     });
+
+    console.log(program);
+
 
     if (!program) {
       throw new NotFoundException(`Scholarship program with ID ${programId} not found`);
@@ -211,6 +285,103 @@ export class ScholarshipsService {
     });
 
     return cycles.map(cycle => this.mapToResponseDto(cycle));
+  }
+
+  async createCycleForProgram(programId: string, createCycleDto: any): Promise<ScholarshipResponseDto> {
+    // First verify the program exists
+    const program = await this.prisma.scholarshipProgram.findUnique({
+      where: { id: programId },
+      include: { sponsor: true }
+    });
+
+    if (!program) {
+      throw new NotFoundException(`Scholarship program with ID ${programId} not found`);
+    }
+
+    // Handle different field naming between DTO and test data
+    const totalSlots = createCycleDto.totalSlots || createCycleDto.maxRecipients || 5;
+    const availableSlots = createCycleDto.availableSlots || createCycleDto.maxRecipients || totalSlots;
+
+    // Handle both YYYY-MM-DD and ISO date formats
+    let applicationStartDate = createCycleDto.applicationStartDate || new Date();
+    let applicationEndDate = createCycleDto.applicationEndDate || createCycleDto.applicationDeadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    if (typeof applicationStartDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(applicationStartDate)) {
+      applicationStartDate = new Date(applicationStartDate + 'T00:00:00.000Z');
+    }
+    if (typeof applicationEndDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(applicationEndDate)) {
+      applicationEndDate = new Date(applicationEndDate + 'T23:59:59.999Z');
+    }
+
+    // Create the cycle with the provided academic year
+    const academicYear = createCycleDto.academicYear || (new Date().getFullYear() + '-' + (new Date().getFullYear() + 1));
+    const displayName = createCycleDto.displayName || `${program.name} ${academicYear}`;
+
+    const scholarship = await this.prisma.scholarshipCycle.create({
+      data: {
+        programId: program.id,
+        academicYear: academicYear,
+        displayName: displayName,
+        amount: createCycleDto.amount || program.defaultAmount,
+        totalSlots: totalSlots,
+        availableSlots: availableSlots,
+        applicationStartDate: applicationStartDate,
+        applicationEndDate: applicationEndDate,
+        durationMonths: 12,
+        disbursementSchedule: 'SEMESTER',
+        status: createCycleDto.status || 'DRAFT',
+      },
+      include: {
+        program: {
+          include: {
+            sponsor: true
+          }
+        },
+        applications: true
+      }
+    });
+
+    // Create eligibility criteria if provided
+    if (createCycleDto.eligibilityCriteria && Array.isArray(createCycleDto.eligibilityCriteria)) {
+      for (const criteria of createCycleDto.eligibilityCriteria) {
+        await this.prisma.scholarshipCycleCriteria.create({
+          data: {
+            cycleId: scholarship.id,
+            criteriaType: 'GENERAL',
+            criteriaValue: criteria,
+            isMandatory: true
+          }
+        });
+      }
+    }
+
+    // Create type criteria if provided
+    if (createCycleDto.type) {
+      await this.prisma.scholarshipCycleCriteria.create({
+        data: {
+          cycleId: scholarship.id,
+          criteriaType: 'SCHOLARSHIP_TYPE',
+          criteriaValue: createCycleDto.type,
+          isMandatory: false
+        }
+      });
+    }
+
+    // Re-fetch the cycle with criteria included
+    const cycleWithCriteria = await this.prisma.scholarshipCycle.findUnique({
+      where: { id: scholarship.id },
+      include: {
+        program: {
+          include: {
+            sponsor: true
+          }
+        },
+        applications: true,
+        criteria: true
+      }
+    });
+
+    return this.mapToResponseDto(cycleWithCriteria);
   }
 
   async update(id: string, updateScholarshipDto: UpdateScholarshipDto): Promise<ScholarshipResponseDto> {
@@ -423,6 +594,58 @@ export class ScholarshipsService {
       status: dynamicStatus,
       createdAt: scholarship.createdAt,
       updatedAt: scholarship.updatedAt
+    };
+  }
+
+  private mapProgramToResponseDto(program: any): ScholarshipResponseDto {
+    // Get the most recent or active cycle for display data
+    const activeCycle = program.cycles?.find((c: any) => c.status === 'OPEN') || program.cycles?.[0];
+
+    // Aggregate data from all cycles
+    const totalApplications = program.cycles?.reduce((sum: number, cycle: any) =>
+      sum + (cycle.applications?.length || 0), 0) || 0;
+
+    // Get overall program status based on cycles
+    let programStatus: string = 'DRAFT';
+    if (program.cycles?.some((c: any) => c.status === 'OPEN')) {
+      programStatus = 'OPEN';
+    } else if (program.cycles?.some((c: any) => c.status === 'CLOSED')) {
+      programStatus = 'CLOSED';
+    } else if (program.cycles?.some((c: any) => c.status === 'SUSPENDED')) {
+      programStatus = 'SUSPENDED';
+    }
+
+    // Map database status to frontend status
+    const statusMap: Record<string, any> = {
+      'DRAFT': 'DRAFT',
+      'OPEN': 'OPEN',
+      'CLOSED': 'CLOSED',
+      'SUSPENDED': 'SUSPENDED'
+    };
+
+    // Extract type from the most recent cycle's criteria
+    const typeCriteria = activeCycle?.criteria?.find((c: any) => c.criteriaType === 'SCHOLARSHIP_TYPE');
+    const scholarshipType = typeCriteria?.criteriaValue || 'FULL';
+
+    // Get eligibility criteria from the most recent cycle
+    const eligibilityCriteria = activeCycle?.criteria?.filter((c: any) =>
+      c.criteriaType !== 'SCHOLARSHIP_TYPE').map((c: any) => c.criteriaValue) || [];
+
+    return {
+      id: program.id,
+      name: program.name,
+      description: program.description || '',
+      amount: program.defaultAmount,
+      sponsor: program.sponsor?.name || 'Unknown Sponsor',
+      type: scholarshipType,
+      applicationStartDate: activeCycle?.applicationStartDate || new Date(),
+      applicationDeadline: activeCycle?.applicationEndDate || new Date(),
+      eligibilityCriteria: eligibilityCriteria,
+      maxRecipients: program.defaultSlots,
+      currentApplications: totalApplications,
+      status: statusMap[programStatus] || 'DRAFT',
+      createdAt: program.createdAt,
+      updatedAt: program.updatedAt
     };
   }
 }

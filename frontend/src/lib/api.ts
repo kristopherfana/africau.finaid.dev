@@ -199,12 +199,16 @@ export const usersAPI = {
 export const scholarshipsAPI = {
   getAll: (params?: ScholarshipFilters): Promise<ScholarshipResponse> =>
     apiClient.get('/scholarships', { params }),
+  getAllCycles: (params?: { status?: string; page?: number; limit?: number }): Promise<{ data: Scholarship[], pagination: any }> =>
+    apiClient.get('/scholarships/cycles/all', { params }),
   getById: (id: string): Promise<Scholarship> =>
     apiClient.get(`/scholarships/${id}`),
   getCyclesByProgram: (programId: string): Promise<Scholarship[]> =>
-    apiClient.get(`/scholarships/programs/${programId}/cycles`),
+    apiClient.get(`/scholarships/${programId}/cycles`),
   create: (data: any): Promise<Scholarship> =>
     apiClient.post('/scholarships', data),
+  createCycle: (programId: string, data: any): Promise<Scholarship> =>
+    apiClient.post(`/scholarships/${programId}/cycles`, data),
   update: (id: string, data: any): Promise<Scholarship> =>
     apiClient.put(`/scholarships/${id}`, data),
   delete: (id: string): Promise<void> =>

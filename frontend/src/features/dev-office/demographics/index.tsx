@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -6,6 +6,9 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { PatternWrapper } from '@/components/au-showcase'
 import { Button } from '@/components/ui/button'
 import { useDemographicsData } from '@/hooks/use-dashboard-stats'
+import { useScholarships } from '@/hooks/use-scholarships'
+import { scholarshipsAPI } from '@/lib/api'
+import { Scholarship } from '@/types/scholarship'
 import {
   Select,
   SelectContent,
@@ -13,6 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Calendar,
   Users,
@@ -23,7 +29,9 @@ import {
   GraduationCap,
   Download,
   Filter,
-  Globe
+  Globe,
+  Award,
+  AlertCircle
 } from 'lucide-react'
 import {
   Table,
@@ -83,8 +91,76 @@ const mockDemographics: DemographicData[] = [
 export default function Demographics() {
   const [selectedCategory, setSelectedCategory] = useState<string>('Gender')
   const [selectedYear, setSelectedYear] = useState<string>('2025')
+  const [viewMode, setViewMode] = useState<'single' | 'multi' | 'all'>('all')
+  const [selectedScholarship, setSelectedScholarship] = useState<string>('')
+  const [selectedCycles, setSelectedCycles] = useState<string[]>([])
+  const [cycles, setCycles] = useState<Scholarship[]>([])
+  const [allCycles, setAllCycles] = useState<Scholarship[]>([])
+  const [cyclesLoading, setCyclesLoading] = useState(false)
+  const [cyclesError, setCyclesError] = useState<string | null>(null)
 
   const { data: demographicsData, isLoading, error } = useDemographicsData()
+  const { data: scholarshipsData } = useScholarships()
+
+  // Fetch all cycles on component mount
+  useEffect(() => {
+    const fetchAllCycles = async () => {
+      try {
+        setCyclesLoading(true)
+        setCyclesError(null)
+        const response = await scholarshipsAPI.getAllCycles({ limit: 100 })
+        setAllCycles(response.data)
+      } catch (err) {
+        setCyclesError(err instanceof Error ? err.message : 'Failed to fetch all cycles')
+      } finally {
+        setCyclesLoading(false)
+      }
+    }
+
+    fetchAllCycles()
+  }, [])
+
+  // Fetch cycles when scholarship is selected
+  useEffect(() => {
+    const fetchCycles = async () => {
+      if (!selectedScholarship || viewMode === 'all') {
+        setCycles([])
+        setSelectedCycles([])
+        return
+      }
+
+      try {
+        setCyclesLoading(true)
+        setCyclesError(null)
+        const cycleData = await scholarshipsAPI.getCyclesByProgram(selectedScholarship)
+        setCycles(cycleData)
+
+        // Auto-select first cycle for single mode, or first two for multi mode
+        if (cycleData.length > 0) {
+          if (viewMode === 'single') {
+            setSelectedCycles([cycleData[0].id])
+          } else if (viewMode === 'multi' && cycleData.length > 1) {
+            setSelectedCycles([cycleData[0].id, cycleData[1].id])
+          }
+        }
+      } catch (err) {
+        setCyclesError(err instanceof Error ? err.message : 'Failed to fetch cycles')
+      } finally {
+        setCyclesLoading(false)
+      }
+    }
+
+    fetchCycles()
+  }, [selectedScholarship, viewMode])
+
+  // Get selected cycle data
+  const selectedCycleData = selectedCycles.map(id =>
+    (selectedScholarship ? cycles : allCycles).find(c => c.id === id)
+  ).filter(Boolean) as Scholarship[]
+
+  // Determine which cycles to display
+  const displayCycles = viewMode === 'all' ? allCycles :
+                       selectedScholarship ? cycles : allCycles
 
   // Transform API data to match the component structure
   const processedData: DemographicData[] = []
@@ -149,6 +225,9 @@ export default function Demographics() {
   const filteredData = processedData.filter(item => item.category === selectedCategory)
   const categories = [...new Set(processedData.map(item => item.category))]
 
+  const isDataLoading = isLoading || cyclesLoading
+  const hasDataError = error || cyclesError
+
   const getTrendColor = (trend: number) => {
     if (trend > 2) return 'text-green-600'
     if (trend > 0) return 'text-green-500'
@@ -184,7 +263,19 @@ export default function Demographics() {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-800 mb-2">Demographics Analysis</h1>
-                  <p className="text-gray-600">Detailed breakdown of scholarship beneficiaries by various categories</p>
+                  <p className="text-gray-600">
+                    Detailed breakdown of scholarship beneficiaries by various categories
+                    {selectedScholarship && scholarshipsData?.data && (
+                      <span className="block text-sm mt-1 text-blue-600 font-medium">
+                        Analyzing: {scholarshipsData.data.find(s => s.id === selectedScholarship)?.name}
+                      </span>
+                    )}
+                    {selectedCycles.length > 0 && (
+                      <span className="block text-sm mt-1 text-green-600 font-medium">
+                        {selectedCycles.length === 1 ? 'Single cycle' : `${selectedCycles.length} cycles`} selected
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <Button className="au-btn-secondary flex items-center">
                   <Download className="w-4 h-4 mr-2" />
@@ -194,17 +285,129 @@ export default function Demographics() {
             </div>
           </div>
 
+          {/* View Mode and Selection Controls */}
+          <div className="container mx-auto px-8 py-6">
+            <PatternWrapper pattern="dots" className="au-card">
+              <div className="p-6 space-y-4">
+                {/* View Mode Selection */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-gray-600" />
+                    <span className="font-semibold">Analysis Scope:</span>
+                    <Select value={viewMode} onValueChange={(value: 'single' | 'multi' | 'all') => {
+                      setViewMode(value)
+                      setSelectedCycles([])
+                      if (value === 'all') {
+                        setSelectedScholarship('')
+                      }
+                    }}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Scholarships</SelectItem>
+                        <SelectItem value="single">Single Scholarship/Cycle</SelectItem>
+                        <SelectItem value="multi">Multiple Cycles</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Scholarship Selection (hidden in 'all' mode) */}
+                {viewMode !== 'all' && (
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-gray-600" />
+                      <span className="font-semibold">Scholarship Program:</span>
+                      <Select value={selectedScholarship} onValueChange={setSelectedScholarship}>
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="Select a scholarship" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {scholarshipsData?.data?.map((scholarship) => (
+                            <SelectItem key={scholarship.id} value={scholarship.id}>
+                              {scholarship.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cycle Selection */}
+                {selectedScholarship && cycles.length > 0 && viewMode !== 'all' && (
+                  <div className="space-y-4">
+                    {viewMode === 'single' ? (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-gray-600" />
+                        <span className="font-semibold">Select Cycle:</span>
+                        <Select
+                          value={selectedCycles[0] || ''}
+                          onValueChange={(value) => setSelectedCycles([value])}
+                        >
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Select cycle" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cycles.map(cycle => (
+                              <SelectItem key={cycle.id} value={cycle.id}>
+                                {cycle.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Filter className="w-5 h-5 text-gray-600" />
+                          <span className="font-semibold">Select Cycles for Analysis:</span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {cycles.map(cycle => (
+                            <div key={cycle.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={cycle.id}
+                                checked={selectedCycles.includes(cycle.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedCycles([...selectedCycles, cycle.id])
+                                  } else {
+                                    setSelectedCycles(selectedCycles.filter(id => id !== cycle.id))
+                                  }
+                                }}
+                              />
+                              <Label
+                                htmlFor={cycle.id}
+                                className="text-sm cursor-pointer truncate max-w-[150px]"
+                                title={cycle.name}
+                              >
+                                {cycle.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </PatternWrapper>
+          </div>
+
           {/* Overview Cards */}
           <div className="au-stat-section au-section-gray-textured">
             <div className="container mx-auto">
-              {error ? (
+              {hasDataError ? (
                 <div className="au-stat-grid">
                   <div className="col-span-4 p-8 text-center">
+                    <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                     <p className="text-red-600 mb-2">Error loading demographics data</p>
-                    <p className="text-gray-500 text-sm">Please try refreshing the page</p>
+                    <p className="text-gray-500 text-sm">{cyclesError || error || 'Please try refreshing the page'}</p>
                   </div>
                 </div>
-              ) : isLoading ? (
+              ) : isDataLoading ? (
                 <div className="au-stat-grid">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="au-stat-item">
@@ -215,11 +418,22 @@ export default function Demographics() {
                     </div>
                   ))}
                 </div>
+              ) : !selectedScholarship && viewMode !== 'all' ? (
+                <div className="au-stat-grid">
+                  <div className="col-span-4 p-8 text-center">
+                    <Award className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">Select a Scholarship Program</p>
+                    <p className="text-gray-500 text-sm">Choose a scholarship program above to view its demographic breakdown</p>
+                  </div>
+                </div>
               ) : (
                 <div className="au-stat-grid">
                   <div className="au-stat-item">
                     <span className="au-stat-number">{demographicsData?.totalBeneficiaries?.toLocaleString() || 0}</span>
-                    <span className="au-stat-label">Total Beneficiaries</span>
+                    <span className="au-stat-label">
+                      {viewMode === 'all' ? 'Total Beneficiaries' :
+                       selectedCycles.length > 1 ? 'Beneficiaries (Selected Cycles)' : 'Beneficiaries (Selected)'}
+                    </span>
                   </div>
                   <div className="au-stat-item">
                     <span className="au-stat-number">{demographicsData?.genderDistribution?.female || 0}%</span>
@@ -238,49 +452,52 @@ export default function Demographics() {
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="container mx-auto px-8 py-6">
-            <PatternWrapper pattern="dots" className="au-card">
-              <div className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-gray-600" />
-                    <span className="font-semibold">Category:</span>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(category => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-gray-600" />
-                    <span className="font-semibold">Year:</span>
-                    <Select value={selectedYear} onValueChange={setSelectedYear}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2025">2025</SelectItem>
-                        <SelectItem value="2024">2024</SelectItem>
-                        <SelectItem value="2023">2023</SelectItem>
-                        <SelectItem value="2022">2022</SelectItem>
-                      </SelectContent>
-                    </Select>
+          {/* Additional Filters */}
+          {((viewMode === 'all') || (selectedScholarship && (viewMode === 'single' || selectedCycles.length > 0))) && (
+            <div className="container mx-auto px-8 py-6">
+              <PatternWrapper pattern="dots" className="au-card">
+                <div className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-5 h-5 text-gray-600" />
+                      <span className="font-semibold">Category:</span>
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(category => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-gray-600" />
+                      <span className="font-semibold">Year:</span>
+                      <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2025">2025</SelectItem>
+                          <SelectItem value="2024">2024</SelectItem>
+                          <SelectItem value="2023">2023</SelectItem>
+                          <SelectItem value="2022">2022</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </PatternWrapper>
-          </div>
+              </PatternWrapper>
+            </div>
+          )}
 
           {/* Visualization Grid */}
-          <div className="container mx-auto px-8 pb-8">
+          {((viewMode === 'all') || (selectedScholarship && (viewMode === 'single' || selectedCycles.length > 0))) && (
+            <div className="container mx-auto px-8 pb-8">
             <div className="au-grid au-grid-2 mb-8">
               {/* Chart Visualization */}
               <PatternWrapper pattern="geometric" className="au-card">
@@ -454,7 +671,8 @@ export default function Demographics() {
                 </div>
               </div>
             </PatternWrapper>
-          </div>
+            </div>
+          )}
         </div>
       </Main>
     </>

@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { PatternWrapper } from '@/components/au-showcase'
 import { useDashboardStats, useDemographicsData } from '@/hooks/use-dashboard-stats'
-import { useActiveScholarships } from '@/hooks/use-scholarships'
+import { useScholarships } from '@/hooks/use-scholarships'
+import { scholarshipsAPI } from '@/lib/api'
+import { Scholarship } from '@/types/scholarship'
 import {
   Select,
   SelectContent,
@@ -14,7 +16,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { 
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
   Calendar,
   TrendingUp,
   Users,
@@ -25,7 +36,8 @@ import {
   Download,
   Filter,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  AlertCircle
 } from 'lucide-react'
 import {
   Table,
@@ -36,118 +48,107 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-interface YearlyData {
-  year: number
-  totalScholarships: number
-  totalBeneficiaries: number
-  newBeneficiaries: number
-  totalDisbursed: number
-  averageAmount: number
-  completionRate: number
-  dropoutRate: number
-  maleCount: number
-  femaleCount: number
-  undergradCount: number
-  mastersCount: number
-  phdCount: number
-}
-
-const mockYearlyData: YearlyData[] = [
-  {
-    year: 2025,
-    totalScholarships: 42,
-    totalBeneficiaries: 1847,
-    newBeneficiaries: 450,
-    totalDisbursed: 2500000,
-    averageAmount: 15000,
-    completionRate: 78,
-    dropoutRate: 3,
-    maleCount: 887,
-    femaleCount: 960,
-    undergradCount: 1256,
-    mastersCount: 443,
-    phdCount: 148
-  },
-  {
-    year: 2024,
-    totalScholarships: 38,
-    totalBeneficiaries: 1502,
-    newBeneficiaries: 380,
-    totalDisbursed: 2100000,
-    averageAmount: 14500,
-    completionRate: 82,
-    dropoutRate: 2.5,
-    maleCount: 751,
-    femaleCount: 751,
-    undergradCount: 1051,
-    mastersCount: 361,
-    phdCount: 90
-  },
-  {
-    year: 2023,
-    totalScholarships: 35,
-    totalBeneficiaries: 1320,
-    newBeneficiaries: 350,
-    totalDisbursed: 1850000,
-    averageAmount: 14000,
-    completionRate: 85,
-    dropoutRate: 2,
-    maleCount: 660,
-    femaleCount: 660,
-    undergradCount: 924,
-    mastersCount: 316,
-    phdCount: 80
-  },
-  {
-    year: 2022,
-    totalScholarships: 30,
-    totalBeneficiaries: 1050,
-    newBeneficiaries: 300,
-    totalDisbursed: 1500000,
-    averageAmount: 13500,
-    completionRate: 88,
-    dropoutRate: 1.8,
-    maleCount: 525,
-    femaleCount: 525,
-    undergradCount: 735,
-    mastersCount: 252,
-    phdCount: 63
-  },
-]
-
-export default function YearlyTracking() {
-  const [selectedYear, setSelectedYear] = useState<string>('2025')
-  const [comparisonYear, setComparisonYear] = useState<string>('2024')
-  const [scholarshipFilter, setScholarshipFilter] = useState<string>('all')
+export default function CycleTracking() {
+  const [selectedScholarship, setSelectedScholarship] = useState<string>('')
+  const [selectedCycles, setSelectedCycles] = useState<string[]>([])
+  const [cycles, setCycles] = useState<Scholarship[]>([])
+  const [allCycles, setAllCycles] = useState<Scholarship[]>([])
+  const [cyclesLoading, setCyclesLoading] = useState(false)
+  const [cyclesError, setCyclesError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'single' | 'multi' | 'all'>('single')
 
   const { data: dashboardStats, isLoading: dashboardLoading, error: dashboardError } = useDashboardStats()
   const { data: demographicsData, isLoading: demographicsLoading, error: demographicsError } = useDemographicsData()
-  const { data: scholarshipsData } = useActiveScholarships()
+  const { data: scholarshipsData } = useScholarships()
 
-  // Create current year data from API
-  const currentYearData = {
-    year: parseInt(selectedYear),
-    totalScholarships: dashboardStats?.totalScholarships || 0,
-    totalBeneficiaries: demographicsData?.totalBeneficiaries || 0,
-    newBeneficiaries: dashboardStats?.monthlyStats?.newApplications || 0,
-    totalDisbursed: dashboardStats?.totalFunding || 0,
-    averageAmount: dashboardStats?.totalFunding && dashboardStats?.approvedApplications
-      ? Math.round(dashboardStats.totalFunding / dashboardStats.approvedApplications)
-      : 0,
-    completionRate: 85, // This would need a specific API endpoint
-    dropoutRate: 3,
-    maleCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.genderDistribution.male) / 100) : 0,
-    femaleCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.genderDistribution.female) / 100) : 0,
-    undergradCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.academicLevels.undergraduate) / 100) : 0,
-    mastersCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.academicLevels.masters) / 100) : 0,
-    phdCount: demographicsData ? Math.round((demographicsData.totalBeneficiaries * demographicsData.academicLevels.phd) / 100) : 0,
+  // Fetch all cycles on component mount
+  useEffect(() => {
+    const fetchAllCycles = async () => {
+      try {
+        setCyclesLoading(true)
+        setCyclesError(null)
+        const response = await scholarshipsAPI.getAllCycles({ limit: 100 })
+        setAllCycles(response.data)
+      } catch (err) {
+        setCyclesError(err instanceof Error ? err.message : 'Failed to fetch all cycles')
+      } finally {
+        setCyclesLoading(false)
+      }
+    }
+
+    fetchAllCycles()
+  }, [])
+
+  // Fetch cycles when scholarship is selected
+  useEffect(() => {
+    const fetchCycles = async () => {
+      if (!selectedScholarship) {
+        setCycles([])
+        setSelectedCycles([])
+        return
+      }
+
+      try {
+        setCyclesLoading(true)
+        setCyclesError(null)
+        const cycleData = await scholarshipsAPI.getCyclesByProgram(selectedScholarship)
+        setCycles(cycleData)
+
+        // Auto-select first cycle for single mode, or first two for multi mode
+        if (cycleData.length > 0) {
+          if (viewMode === 'single') {
+            setSelectedCycles([cycleData[0].id])
+          } else if (viewMode === 'multi' && cycleData.length > 1) {
+            setSelectedCycles([cycleData[0].id, cycleData[1].id])
+          }
+        }
+      } catch (err) {
+        setCyclesError(err instanceof Error ? err.message : 'Failed to fetch cycles')
+      } finally {
+        setCyclesLoading(false)
+      }
+    }
+
+    fetchCycles()
+  }, [selectedScholarship, viewMode])
+
+  // Get selected cycle data
+  const selectedCycleData = selectedCycles.map(id =>
+    (selectedScholarship ? cycles : allCycles).find(c => c.id === id)
+  ).filter(Boolean) as Scholarship[]
+
+  // Determine which cycles to display
+  const displayCycles = viewMode === 'all' ? allCycles :
+                       selectedScholarship ? cycles : allCycles
+
+  // Helper functions for multi-cycle analysis
+  const calculateEvolutionTrend = (cycles: Scholarship[], metric: keyof Scholarship) => {
+    if (cycles.length < 2) return 0
+    const values = cycles.map(c => Number(c[metric])).filter(v => !isNaN(v))
+    if (values.length < 2) return 0
+
+    // Calculate average change between consecutive cycles
+    let totalChange = 0
+    for (let i = 1; i < values.length; i++) {
+      totalChange += ((values[i] - values[i-1]) / values[i-1]) * 100
+    }
+    return totalChange / (values.length - 1)
   }
 
-  // For comparison data, we'll use the mock data for now (ideally this would be historical API data)
-  const comparisonData = mockYearlyData.find(d => d.year.toString() === comparisonYear) || mockYearlyData[1]
+  const getMetricStats = (cycles: Scholarship[], metric: keyof Scholarship) => {
+    const values = cycles.map(c => Number(c[metric])).filter(v => !isNaN(v))
+    if (values.length === 0) return { min: 0, max: 0, avg: 0, total: 0 }
 
-  const isLoading = dashboardLoading || demographicsLoading
-  const hasError = dashboardError || demographicsError
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+      avg: values.reduce((a, b) => a + b, 0) / values.length,
+      total: values.reduce((a, b) => a + b, 0)
+    }
+  }
+
+  const isLoading = dashboardLoading || demographicsLoading || cyclesLoading
+  const hasError = dashboardError || demographicsError || cyclesError
 
   const calculateChange = (current: number, previous: number) => {
     const change = ((current - previous) / previous) * 100
@@ -168,7 +169,7 @@ export default function YearlyTracking() {
   return (
     <>
       {/* ===== Top Heading ===== */}
-      <Header 
+      <Header
         style={{ background: 'linear-gradient(135deg, #c20000 0%, #8b0000 100%)' }}
         className="[&_button]:text-white [&_button]:hover:text-white/80 [&_button]:hover:bg-white/10 [&_button]:bg-transparent [&_svg]:text-white [&_img]:border-white/20 [&_.border-r]:border-white/20 [&_[data-slot='sidebar-trigger']]:bg-transparent [&_[data-slot='sidebar-trigger']]:hover:bg-white/10 [&_[data-slot='sidebar-trigger']]:text-white"
       >
@@ -187,12 +188,12 @@ export default function YearlyTracking() {
             <div className="container mx-auto">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-800 mb-2">Yearly Tracking</h1>
+                  <h1 className="text-3xl font-bold text-gray-800 mb-2">Cycle Tracking</h1>
                   <p className="text-gray-600">
-                    Monitor scholarship performance and trends over time
-                    {scholarshipFilter !== 'all' && scholarshipsData?.data && (
+                    Compare scholarship cycles and track performance across different application periods
+                    {selectedScholarship && scholarshipsData?.data && (
                       <span className="block text-sm mt-1 text-blue-600 font-medium">
-                        Filtered by: {scholarshipsData.data.find(s => s.id === scholarshipFilter)?.name}
+                        Analyzing: {scholarshipsData.data.find(s => s.id === selectedScholarship)?.name}
                       </span>
                     )}
                   </p>
@@ -205,63 +206,113 @@ export default function YearlyTracking() {
             </div>
           </div>
 
-          {/* Year Selection */}
+          {/* View Mode and Selection Controls */}
           <div className="container mx-auto px-8 py-6">
             <PatternWrapper pattern="dots" className="au-card">
-              <div className="p-6">
-                <div className="flex items-center gap-4">
+              <div className="p-6 space-y-4">
+                {/* View Mode Selection */}
+                <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-gray-600" />
-                    <span className="font-semibold">Viewing Year:</span>
-                    <Select value={selectedYear} onValueChange={setSelectedYear}>
-                      <SelectTrigger className="w-[120px]">
+                    <BarChart3 className="w-5 h-5 text-gray-600" />
+                    <span className="font-semibold">View Mode:</span>
+                    <Select value={viewMode} onValueChange={(value: 'single' | 'multi' | 'all') => {
+                      setViewMode(value)
+                      setSelectedCycles([])
+                      if (value === 'all') {
+                        setSelectedScholarship('')
+                      }
+                    }}>
+                      <SelectTrigger className="w-[200px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockYearlyData.map(data => (
-                          <SelectItem key={data.year} value={data.year.toString()}>
-                            {data.year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-gray-600" />
-                    <span className="font-semibold">Compare with:</span>
-                    <Select value={comparisonYear} onValueChange={setComparisonYear}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mockYearlyData
-                          .filter(data => data.year.toString() !== selectedYear)
-                          .map(data => (
-                            <SelectItem key={data.year} value={data.year.toString()}>
-                              {data.year}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="w-5 h-5 text-gray-600" />
-                    <span className="font-semibold">Scholarship:</span>
-                    <Select value={scholarshipFilter} onValueChange={setScholarshipFilter}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="All Scholarships" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Scholarships</SelectItem>
-                        {scholarshipsData?.data?.map((scholarship) => (
-                          <SelectItem key={scholarship.id} value={scholarship.id}>
-                            {scholarship.name}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="single">Single Cycle</SelectItem>
+                        <SelectItem value="multi">Multi-Cycle Evolution</SelectItem>
+                        <SelectItem value="all">All Cycles Overview</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {/* Scholarship Selection (hidden in 'all' mode) */}
+                {viewMode !== 'all' && (
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-gray-600" />
+                      <span className="font-semibold">Scholarship Program:</span>
+                      <Select value={selectedScholarship} onValueChange={setSelectedScholarship}>
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="Select a scholarship" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {scholarshipsData?.data?.map((scholarship) => (
+                            <SelectItem key={scholarship.id} value={scholarship.id}>
+                              {scholarship.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cycle Selection */}
+                {selectedScholarship && cycles.length > 0 && viewMode !== 'all' && (
+                  <div className="space-y-4">
+                    {viewMode === 'single' ? (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-gray-600" />
+                        <span className="font-semibold">Select Cycle:</span>
+                        <Select
+                          value={selectedCycles[0] || ''}
+                          onValueChange={(value) => setSelectedCycles([value])}
+                        >
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Select cycle" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cycles.map(cycle => (
+                              <SelectItem key={cycle.id} value={cycle.id}>
+                                {cycle.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Filter className="w-5 h-5 text-gray-600" />
+                          <span className="font-semibold">Select Cycles for Evolution Analysis:</span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {cycles.map(cycle => (
+                            <div key={cycle.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={cycle.id}
+                                checked={selectedCycles.includes(cycle.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedCycles([...selectedCycles, cycle.id])
+                                  } else {
+                                    setSelectedCycles(selectedCycles.filter(id => id !== cycle.id))
+                                  }
+                                }}
+                              />
+                              <Label
+                                htmlFor={cycle.id}
+                                className="text-sm cursor-pointer truncate max-w-[150px]"
+                                title={cycle.name}
+                              >
+                                {cycle.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </PatternWrapper>
           </div>
@@ -272,8 +323,9 @@ export default function YearlyTracking() {
               <div className="au-grid au-grid-1">
                 <PatternWrapper pattern="dots" className="au-card">
                   <div className="p-8 text-center">
+                    <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                     <p className="text-red-600 mb-2">Error loading tracking data</p>
-                    <p className="text-gray-500 text-sm">Please try refreshing the page</p>
+                    <p className="text-gray-500 text-sm">{cyclesError || 'Please try refreshing the page'}</p>
                   </div>
                 </PatternWrapper>
               </div>
@@ -291,265 +343,420 @@ export default function YearlyTracking() {
                   </PatternWrapper>
                 ))}
               </div>
-            ) : (
+            ) : viewMode === 'all' ? (
+              // All Cycles Overview
               <div className="au-grid au-grid-4">
-              <PatternWrapper pattern="dots" className="au-card">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <Award className="w-6 h-6 text-blue-600" />
-                    {renderChangeIndicator(currentYearData.totalScholarships, comparisonData.totalScholarships)}
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Calendar className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{allCycles.length}</div>
+                    <div className="text-sm text-gray-600">Total Cycles</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Across all programs
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold">{currentYearData.totalScholarships}</div>
-                  <div className="text-sm text-gray-600">Active Scholarships</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    vs {comparisonData.totalScholarships} in {comparisonYear}
-                  </div>
-                </div>
-              </PatternWrapper>
+                </PatternWrapper>
 
-              <PatternWrapper pattern="geometric" className="au-card">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <Users className="w-6 h-6 text-green-600" />
-                    {renderChangeIndicator(currentYearData.totalBeneficiaries, comparisonData.totalBeneficiaries)}
+                <PatternWrapper pattern="geometric" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Users className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{getMetricStats(allCycles, 'currentApplications').total}</div>
+                    <div className="text-sm text-gray-600">Total Applications</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Avg: {Math.round(getMetricStats(allCycles, 'currentApplications').avg)} per cycle
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold">{currentYearData.totalBeneficiaries.toLocaleString()}</div>
-                  <div className="text-sm text-gray-600">Total Beneficiaries</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    +{currentYearData.newBeneficiaries} new this year
-                  </div>
-                </div>
-              </PatternWrapper>
+                </PatternWrapper>
 
-              <PatternWrapper pattern="grid" className="au-card">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <DollarSign className="w-6 h-6 text-yellow-600" />
-                    {renderChangeIndicator(currentYearData.totalDisbursed, comparisonData.totalDisbursed)}
+                <PatternWrapper pattern="grid" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <DollarSign className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <div className="text-2xl font-bold">${(getMetricStats(allCycles, 'amount').total / 1000).toFixed(0)}K</div>
+                    <div className="text-sm text-gray-600">Total Award Value</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Avg: ${Math.round(getMetricStats(allCycles, 'amount').avg).toLocaleString()}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold">${(currentYearData.totalDisbursed / 1000000).toFixed(1)}M</div>
-                  <div className="text-sm text-gray-600">Total Disbursed</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Avg: ${currentYearData.averageAmount.toLocaleString()}
-                  </div>
-                </div>
-              </PatternWrapper>
+                </PatternWrapper>
 
-              <PatternWrapper pattern="dots" className="au-card">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <Target className="w-6 h-6 text-purple-600" />
-                    {renderChangeIndicator(currentYearData.completionRate, comparisonData.completionRate)}
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Target className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{allCycles.filter(c => c.status === 'OPEN').length}</div>
+                    <div className="text-sm text-gray-600">Active Cycles</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {allCycles.filter(c => c.status === 'DRAFT').length} in draft
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold">{currentYearData.completionRate}%</div>
-                  <div className="text-sm text-gray-600">Completion Rate</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Dropout: {currentYearData.dropoutRate}%
+                </PatternWrapper>
+              </div>
+            ) : viewMode === 'multi' && selectedCycleData.length > 0 ? (
+              // Multi-Cycle Evolution Analysis
+              <div className="au-grid au-grid-4">
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Award className="w-6 h-6 text-blue-600" />
+                      <TrendingUp className={`w-4 h-4 ${calculateEvolutionTrend(selectedCycleData, 'maxRecipients') >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                    </div>
+                    <div className="text-2xl font-bold">{getMetricStats(selectedCycleData, 'maxRecipients').avg.toFixed(0)}</div>
+                    <div className="text-sm text-gray-600">Avg Recipients</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Trend: {calculateEvolutionTrend(selectedCycleData, 'maxRecipients').toFixed(1)}%
+                    </div>
                   </div>
-                </div>
-              </PatternWrapper>
+                </PatternWrapper>
+
+                <PatternWrapper pattern="geometric" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Users className="w-6 h-6 text-green-600" />
+                      <TrendingUp className={`w-4 h-4 ${calculateEvolutionTrend(selectedCycleData, 'currentApplications') >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                    </div>
+                    <div className="text-2xl font-bold">{getMetricStats(selectedCycleData, 'currentApplications').total}</div>
+                    <div className="text-sm text-gray-600">Total Applications</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Trend: {calculateEvolutionTrend(selectedCycleData, 'currentApplications').toFixed(1)}%
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                <PatternWrapper pattern="grid" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <DollarSign className="w-6 h-6 text-yellow-600" />
+                      <TrendingUp className={`w-4 h-4 ${calculateEvolutionTrend(selectedCycleData, 'amount') >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                    </div>
+                    <div className="text-2xl font-bold">${getMetricStats(selectedCycleData, 'amount').avg.toLocaleString()}</div>
+                    <div className="text-sm text-gray-600">Avg Award Amount</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Trend: {calculateEvolutionTrend(selectedCycleData, 'amount').toFixed(1)}%
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Calendar className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{selectedCycleData.length}</div>
+                    <div className="text-sm text-gray-600">Selected Cycles</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Evolution analysis
+                    </div>
+                  </div>
+                </PatternWrapper>
+              </div>
+            ) : selectedCycleData.length === 1 ? (
+              // Single Cycle View
+              <div className="au-grid au-grid-4">
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Award className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{selectedCycleData[0].maxRecipients}</div>
+                    <div className="text-sm text-gray-600">Max Recipients</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {selectedCycleData[0].name}
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                <PatternWrapper pattern="geometric" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Users className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{selectedCycleData[0].currentApplications}</div>
+                    <div className="text-sm text-gray-600">Current Applications</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {selectedCycleData[0].maxRecipients - selectedCycleData[0].currentApplications} slots remaining
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                <PatternWrapper pattern="grid" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <DollarSign className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <div className="text-2xl font-bold">${selectedCycleData[0].amount.toLocaleString()}</div>
+                    <div className="text-sm text-gray-600">Award Amount</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Per recipient
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Target className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{selectedCycleData[0].status}</div>
+                    <div className="text-sm text-gray-600">Cycle Status</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Current status
+                    </div>
+                  </div>
+                </PatternWrapper>
+              </div>
+            ) : (
+              <div className="au-grid au-grid-1">
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-8 text-center">
+                    <Award className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">
+                      {viewMode === 'single' ? 'Select a Cycle' :
+                       viewMode === 'multi' ? 'Select Cycles for Analysis' :
+                       'Select View Mode'}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      {viewMode === 'single' ? 'Choose a scholarship program and cycle to view details' :
+                       viewMode === 'multi' ? 'Choose a scholarship program and select multiple cycles to analyze evolution' :
+                       'Choose how you want to view and analyze scholarship cycles'}
+                    </p>
+                  </div>
+                </PatternWrapper>
               </div>
             )}
           </div>
 
           {/* Detailed Comparison Table */}
-          <div className="container mx-auto px-8 pb-8">
-            <PatternWrapper pattern="geometric" className="au-card">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">Year-over-Year Comparison</h3>
-                  <BarChart3 className="w-5 h-5 text-gray-600" />
-                </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Year</TableHead>
-                        <TableHead>Scholarships</TableHead>
-                        <TableHead>Total Beneficiaries</TableHead>
-                        <TableHead>New Beneficiaries</TableHead>
-                        <TableHead>Amount Disbursed</TableHead>
-                        <TableHead>Avg. Amount</TableHead>
-                        <TableHead>Completion Rate</TableHead>
-                        <TableHead>Gender Ratio (F:M)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockYearlyData.map((data) => (
-                        <TableRow key={data.year} className={data.year.toString() === selectedYear ? 'bg-blue-50' : ''}>
-                          <TableCell className="font-medium">
-                            {data.year}
-                            {data.year.toString() === selectedYear && (
-                              <span className="ml-2 text-xs au-badge au-badge-primary">Current</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{data.totalScholarships}</TableCell>
-                          <TableCell>{data.totalBeneficiaries.toLocaleString()}</TableCell>
-                          <TableCell>+{data.newBeneficiaries}</TableCell>
-                          <TableCell>${(data.totalDisbursed / 1000000).toFixed(2)}M</TableCell>
-                          <TableCell>${data.averageAmount.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span>{data.completionRate}%</span>
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-green-500 h-2 rounded-full"
-                                  style={{ width: `${data.completionRate}%` }}
-                                />
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {((data.femaleCount / (data.femaleCount + data.maleCount)) * 100).toFixed(0)}:
-                            {((data.maleCount / (data.femaleCount + data.maleCount)) * 100).toFixed(0)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </PatternWrapper>
-          </div>
-
-          {/* Demographics Breakdown */}
-          <div className="container mx-auto px-8 pb-8">
-            <div className="au-section-header mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">
-                {selectedYear} Demographics Breakdown
-                {scholarshipFilter !== 'all' && scholarshipsData?.data && (
-                  <span className="text-lg font-normal text-gray-600 ml-2">
-                    - {scholarshipsData.data.find(s => s.id === scholarshipFilter)?.name}
-                  </span>
-                )}
-              </h2>
-            </div>
-            <div className="au-grid au-grid-3">
-              {/* Gender Distribution */}
-              <PatternWrapper pattern="dots" className="au-card">
-                <div className="p-6">
-                  <h4 className="font-bold text-lg mb-4">Gender Distribution</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">Female</span>
-                        <span className="text-sm font-bold">
-                          {currentYearData.femaleCount} ({((currentYearData.femaleCount / currentYearData.totalBeneficiaries) * 100).toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-pink-500 h-3 rounded-full"
-                          style={{ width: `${(currentYearData.femaleCount / currentYearData.totalBeneficiaries) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">Male</span>
-                        <span className="text-sm font-bold">
-                          {currentYearData.maleCount} ({((currentYearData.maleCount / currentYearData.totalBeneficiaries) * 100).toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-blue-500 h-3 rounded-full"
-                          style={{ width: `${(currentYearData.maleCount / currentYearData.totalBeneficiaries) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </PatternWrapper>
-
-              {/* Academic Level Distribution */}
+          {(displayCycles.length > 0) && (
+            <div className="container mx-auto px-8 pb-8">
               <PatternWrapper pattern="geometric" className="au-card">
                 <div className="p-6">
-                  <h4 className="font-bold text-lg mb-4">Academic Levels</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">Undergraduate</span>
-                        <span className="text-sm font-bold">
-                          {currentYearData.undergradCount} ({((currentYearData.undergradCount / currentYearData.totalBeneficiaries) * 100).toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-green-500 h-3 rounded-full"
-                          style={{ width: `${(currentYearData.undergradCount / currentYearData.totalBeneficiaries) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">Masters</span>
-                        <span className="text-sm font-bold">
-                          {currentYearData.mastersCount} ({((currentYearData.mastersCount / currentYearData.totalBeneficiaries) * 100).toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-yellow-500 h-3 rounded-full"
-                          style={{ width: `${(currentYearData.mastersCount / currentYearData.totalBeneficiaries) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">PhD</span>
-                        <span className="text-sm font-bold">
-                          {currentYearData.phdCount} ({((currentYearData.phdCount / currentYearData.totalBeneficiaries) * 100).toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-purple-500 h-3 rounded-full"
-                          style={{ width: `${(currentYearData.phdCount / currentYearData.totalBeneficiaries) * 100}%` }}
-                        />
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">
+                      {viewMode === 'all' ? 'All Cycles Overview' :
+                       viewMode === 'multi' ? 'Evolution Analysis Table' :
+                       'Cycle Details'}
+                    </h3>
+                    <BarChart3 className="w-5 h-5 text-gray-600" />
                   </div>
-                </div>
-              </PatternWrapper>
-
-              {/* Trends */}
-              <PatternWrapper pattern="grid" className="au-card">
-                <div className="p-6">
-                  <h4 className="font-bold text-lg mb-4">Key Trends</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-500 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Growth Rate</p>
-                        <p className="text-xs text-gray-600">
-                          {calculateChange(currentYearData.totalBeneficiaries, comparisonData.totalBeneficiaries).toFixed(1)}% YoY increase
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Target className="w-4 h-4 text-blue-500 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Average Funding</p>
-                        <p className="text-xs text-gray-600">
-                          ${currentYearData.averageAmount.toLocaleString()} per student
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Users className="w-4 h-4 text-purple-500 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">New Recipients</p>
-                        <p className="text-xs text-gray-600">
-                          {currentYearData.newBeneficiaries} new students this year
-                        </p>
-                      </div>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cycle</TableHead>
+                          {viewMode === 'all' && <TableHead>Program</TableHead>}
+                          <TableHead>Academic Year</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Max Recipients</TableHead>
+                          <TableHead>Current Applications</TableHead>
+                          <TableHead>Award Amount</TableHead>
+                          <TableHead>Application Period</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {displayCycles.map((cycle) => (
+                          <TableRow
+                            key={cycle.id}
+                            className={
+                              selectedCycles.includes(cycle.id) ? 'bg-blue-50' : ''
+                            }
+                          >
+                            <TableCell className="font-medium">
+                              <div className="max-w-[200px] truncate" title={cycle.name}>
+                                {cycle.name}
+                              </div>
+                              {selectedCycles.includes(cycle.id) && viewMode !== 'all' && (
+                                <span className="ml-2 text-xs au-badge au-badge-primary">Selected</span>
+                              )}
+                            </TableCell>
+                            {viewMode === 'all' && (
+                              <TableCell>
+                                <div className="max-w-[150px] truncate" title={cycle.sponsor}>
+                                  {cycle.sponsor}
+                                </div>
+                              </TableCell>
+                            )}
+                            <TableCell>
+                              {new Date(cycle.applicationStartDate).getFullYear()}-{new Date(cycle.applicationDeadline).getFullYear()}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                cycle.status === 'OPEN' ? 'bg-green-100 text-green-800' :
+                                cycle.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
+                                cycle.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {cycle.status}
+                              </span>
+                            </TableCell>
+                            <TableCell>{cycle.maxRecipients}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span>{cycle.currentApplications}</span>
+                                {viewMode === 'multi' && selectedCycles.includes(cycle.id) && (
+                                  <span className="text-xs text-gray-500">
+                                    {((cycle.currentApplications / cycle.maxRecipients) * 100).toFixed(1)}% filled
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>${cycle.amount.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <div className="text-xs">
+                                {new Date(cycle.applicationStartDate).toLocaleDateString()} -
+                                <br />
+                                {new Date(cycle.applicationDeadline).toLocaleDateString()}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               </PatternWrapper>
             </div>
-          </div>
+          )}
+
+          {/* Evolution Analysis Section */}
+          {viewMode === 'multi' && selectedCycleData.length > 1 && (
+            <div className="container mx-auto px-8 pb-8">
+              <div className="au-section-header mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {currentCycleData.name} Details
+                  {selectedScholarship && scholarshipsData?.data && (
+                    <span className="text-lg font-normal text-gray-600 ml-2">
+                      - {scholarshipsData.data.find(s => s.id === selectedScholarship)?.name}
+                    </span>
+                  )}
+                </h2>
+              </div>
+              <div className="au-grid au-grid-3">
+                {/* Cycle Information */}
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <h4 className="font-bold text-lg mb-4">Cycle Information</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm">Application Period</span>
+                        </div>
+                        <p className="text-sm font-bold">
+                          {new Date(currentCycleData.applicationStartDate).toLocaleDateString()} - {new Date(currentCycleData.applicationDeadline).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm">Status</span>
+                        </div>
+                        <span className={`text-sm px-2 py-1 rounded-full ${
+                          currentCycleData.status === 'OPEN' ? 'bg-green-100 text-green-800' :
+                          currentCycleData.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {currentCycleData.status}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm">Award Amount</span>
+                        </div>
+                        <p className="text-sm font-bold">
+                          ${currentCycleData.amount.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                {/* Application Statistics */}
+                <PatternWrapper pattern="geometric" className="au-card">
+                  <div className="p-6">
+                    <h4 className="font-bold text-lg mb-4">Application Statistics</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm">Current Applications</span>
+                          <span className="text-sm font-bold">
+                            {currentCycleData.currentApplications}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div
+                            className="bg-blue-500 h-3 rounded-full"
+                            style={{ width: `${Math.min((currentCycleData.currentApplications / currentCycleData.maxRecipients) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm">Max Recipients</span>
+                          <span className="text-sm font-bold">
+                            {currentCycleData.maxRecipients}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          {currentCycleData.maxRecipients - currentCycleData.currentApplications} slots remaining
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                {/* Comparison */}
+                {comparisonCycleData ? (
+                  <PatternWrapper pattern="grid" className="au-card">
+                    <div className="p-6">
+                      <h4 className="font-bold text-lg mb-4">Comparison</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2">
+                          <TrendingUp className="w-4 h-4 text-green-500 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">Applications Growth</p>
+                            <p className="text-xs text-gray-600">
+                              {calculateChange(currentCycleData.currentApplications, comparisonCycleData.currentApplications).toFixed(1)}% vs comparison cycle
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <DollarSign className="w-4 h-4 text-blue-500 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">Award Amount Change</p>
+                            <p className="text-xs text-gray-600">
+                              {calculateChange(currentCycleData.amount, comparisonCycleData.amount).toFixed(1)}% change
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Users className="w-4 h-4 text-purple-500 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">Capacity Change</p>
+                            <p className="text-xs text-gray-600">
+                              {calculateChange(currentCycleData.maxRecipients, comparisonCycleData.maxRecipients).toFixed(1)}% change in max recipients
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </PatternWrapper>
+                ) : (
+                  <PatternWrapper pattern="grid" className="au-card">
+                    <div className="p-6 text-center">
+                      <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 mb-2">Select Comparison Cycle</p>
+                      <p className="text-gray-500 text-sm">Choose a second cycle to see comparative analysis</p>
+                    </div>
+                  </PatternWrapper>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Main>
     </>

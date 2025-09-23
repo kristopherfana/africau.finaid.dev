@@ -275,13 +275,13 @@ export default function ScholarshipManagement() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Scholarship Name</TableHead>
+                          <TableHead>Program Name</TableHead>
                           <TableHead>Sponsor</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Application Period</TableHead>
-                          <TableHead>Applications</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Max Recipients</TableHead>
+                          <TableHead>Latest Application Period</TableHead>
+                          <TableHead>Total Applications</TableHead>
+                          <TableHead>Default Amount</TableHead>
+                          <TableHead>Default Recipients</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>

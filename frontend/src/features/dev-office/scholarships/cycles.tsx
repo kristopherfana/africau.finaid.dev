@@ -5,10 +5,10 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { PatternWrapper } from '@/components/au-showcase'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
@@ -33,7 +33,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { 
+import {
   ArrowLeft,
   Calendar,
   Plus,
@@ -50,6 +50,7 @@ import {
 import { Link, useParams } from '@tanstack/react-router'
 import { scholarshipsAPI } from '@/lib/api'
 import { Scholarship } from '@/types/scholarship'
+import { CreateCycleForm } from './create-cycle-form'
 
 interface ScholarshipCycle {
   id: string
@@ -68,10 +69,10 @@ interface ScholarshipCycle {
 export default function ScholarshipCycles() {
   const { id: programId } = useParams({ from: '/_authenticated/dev-office/scholarships/$id/cycles' })
   const [cycles, setCycles] = useState<ScholarshipCycle[]>([])
-  const [selectedCycle, setSelectedCycle] = useState<ScholarshipCycle | null>(null)
   const [editingCycle, setEditingCycle] = useState<ScholarshipCycle | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showCreateForm, setShowCreateForm] = useState(false)
   const [programInfo, setProgramInfo] = useState<{
     name: string;
     sponsor: string;
@@ -144,45 +145,26 @@ export default function ScholarshipCycles() {
     }
   }
 
-  const createNextCycle = async () => {
-    if (cycles.length === 0) return
+  const handleCreateCycleSuccess = (newCycle: any) => {
+    // Convert to ScholarshipCycle and add to list
+    const nameMatch = newCycle.name.match(/(\d{4}-\d{4})/);
+    const academicYear = nameMatch ? nameMatch[1] : new Date().getFullYear() + '-' + (new Date().getFullYear() + 1);
 
-    const lastCycle = cycles[0] // Most recent cycle
-    const nextYear = new Date().getFullYear() + 1
-    const academicYear = `${nextYear}-${nextYear + 1}`
-
-    try {
-      const newCycleData = {
-        name: `${programInfo?.name} ${academicYear}`,
-        description: lastCycle.description || '',
-        amount: lastCycle.amount,
-        maxRecipients: lastCycle.maxRecipients,
-        applicationStartDate: `${nextYear}-01-15`,
-        applicationDeadline: `${nextYear}-03-15`,
-        status: 'DRAFT'
-      }
-
-      const newCycle = await scholarshipsAPI.create(newCycleData)
-
-      // Convert to ScholarshipCycle and add to list
-      const convertedCycle: ScholarshipCycle = {
-        id: newCycle.id,
-        name: newCycle.name,
-        academicYear,
-        amount: newCycle.amount,
-        maxRecipients: newCycle.maxRecipients,
-        currentApplications: newCycle.currentApplications,
-        applicationStartDate: new Date(newCycle.applicationStartDate).toISOString().split('T')[0],
-        applicationDeadline: new Date(newCycle.applicationDeadline).toISOString().split('T')[0],
-        status: newCycle.status,
-        sponsor: newCycle.sponsor,
-        description: newCycle.description
-      }
-
-      setCycles([convertedCycle, ...cycles])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create new cycle')
+    const convertedCycle: ScholarshipCycle = {
+      id: newCycle.id,
+      name: newCycle.name,
+      academicYear,
+      amount: newCycle.amount,
+      maxRecipients: newCycle.maxRecipients,
+      currentApplications: newCycle.currentApplications || 0,
+      applicationStartDate: new Date(newCycle.applicationStartDate).toISOString().split('T')[0],
+      applicationDeadline: new Date(newCycle.applicationDeadline).toISOString().split('T')[0],
+      status: newCycle.status,
+      sponsor: newCycle.sponsor,
+      description: newCycle.description
     }
+
+    setCycles([convertedCycle, ...cycles])
   }
 
   const updateCycle = (updatedCycle: ScholarshipCycle) => {
@@ -278,9 +260,9 @@ export default function ScholarshipCycles() {
                     <p className="text-gray-600">Manage yearly cycles and track performance over time</p>
                   </div>
                 </div>
-                <Button onClick={createNextCycle} className="au-btn-primary flex items-center">
+                <Button onClick={() => setShowCreateForm(true)} className="au-btn-primary flex items-center">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Next Cycle
+                  Create New Cycle
                 </Button>
               </div>
             </div>
@@ -398,64 +380,19 @@ export default function ScholarshipCycles() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end space-x-1">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => setSelectedCycle(cycle)}
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
-                                  <DialogHeader>
-                                    <DialogTitle>Cycle Details: {cycle.name}</DialogTitle>
-                                    <DialogDescription>
-                                      Detailed information for this scholarship cycle
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  {selectedCycle && (
-                                    <div className="space-y-4">
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                          <Label className="text-sm font-medium">Status</Label>
-                                          <div className="mt-1">{getStatusBadge(selectedCycle.status)}</div>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium">Award Amount</Label>
-                                          <div className="mt-1">${selectedCycle.amount.toLocaleString()}</div>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium">Max Recipients</Label>
-                                          <div className="mt-1">{selectedCycle.maxRecipients}</div>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium">Applications Received</Label>
-                                          <div className="mt-1">{selectedCycle.currentApplications}</div>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium">Sponsor</Label>
-                                          <div className="mt-1">{selectedCycle.sponsor}</div>
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <Label className="text-sm font-medium">Application Period</Label>
-                                        <div className="mt-1">
-                                          {new Date(selectedCycle.applicationStartDate).toLocaleDateString()} to{' '}
-                                          {new Date(selectedCycle.applicationDeadline).toLocaleDateString()}
-                                        </div>
-                                      </div>
-                                      {selectedCycle.description && (
-                                        <div>
-                                          <Label className="text-sm font-medium">Description</Label>
-                                          <div className="mt-1 text-sm text-gray-600">{selectedCycle.description}</div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </DialogContent>
-                              </Dialog>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                title="View cycle details"
+                                asChild
+                              >
+                                <Link
+                                  to="/dev-office/scholarships/$id/cycles/$cycleId"
+                                  params={{ id: programId, cycleId: cycle.id }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Link>
+                              </Button>
                               
                               {(cycle.status === 'DRAFT' || cycle.status === 'OPEN') && (
                                 <Dialog>
@@ -496,6 +433,23 @@ export default function ScholarshipCycles() {
             </PatternWrapper>
           </div>
         </div>
+
+        {/* Create Cycle Form */}
+        <CreateCycleForm
+          isOpen={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={handleCreateCycleSuccess}
+          programId={programId}
+          programInfo={{
+            name: programInfo?.name || '',
+            sponsor: programInfo?.sponsor || '',
+            lastCycle: cycles.length > 0 ? {
+              amount: cycles[0].amount,
+              maxRecipients: cycles[0].maxRecipients,
+              description: cycles[0].description
+            } : undefined
+          }}
+        />
       </Main>
     </>
   )
