@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -165,7 +164,7 @@ export default function Demographics() {
   // Transform API data to match the component structure
   const processedData: DemographicData[] = []
 
-  if (demographicsData) {
+  if (demographicsData && demographicsData.totalBeneficiaries > 0) {
     // Gender data
     const totalBeneficiaries = demographicsData.totalBeneficiaries
     processedData.push(
@@ -174,14 +173,14 @@ export default function Demographics() {
         subcategory: 'Female',
         count: Math.round((totalBeneficiaries * demographicsData.genderDistribution.female) / 100),
         percentage: demographicsData.genderDistribution.female,
-        trend: 3.2
+        trend: 0
       },
       {
         category: 'Gender',
         subcategory: 'Male',
         count: Math.round((totalBeneficiaries * demographicsData.genderDistribution.male) / 100),
         percentage: demographicsData.genderDistribution.male,
-        trend: -1.5
+        trend: 0
       }
     )
 
@@ -192,21 +191,21 @@ export default function Demographics() {
         subcategory: 'Undergraduate',
         count: Math.round((totalBeneficiaries * demographicsData.academicLevels.undergraduate) / 100),
         percentage: demographicsData.academicLevels.undergraduate,
-        trend: 2.1
+        trend: 0
       },
       {
         category: 'Academic Level',
         subcategory: 'Masters',
         count: Math.round((totalBeneficiaries * demographicsData.academicLevels.masters) / 100),
         percentage: demographicsData.academicLevels.masters,
-        trend: 4.5
+        trend: 0
       },
       {
         category: 'Academic Level',
         subcategory: 'PhD',
         count: Math.round((totalBeneficiaries * demographicsData.academicLevels.phd) / 100),
         percentage: demographicsData.academicLevels.phd,
-        trend: 1.8
+        trend: 0
       }
     )
 
@@ -217,7 +216,7 @@ export default function Demographics() {
         subcategory: program.name,
         count: Math.round((totalBeneficiaries * program.percentage) / 100),
         percentage: program.percentage,
-        trend: Math.random() * 5 - 1 // Random trend for now
+        trend: 0
       })
     })
   }
@@ -426,6 +425,14 @@ export default function Demographics() {
                     <p className="text-gray-500 text-sm">Choose a scholarship program above to view its demographic breakdown</p>
                   </div>
                 </div>
+              ) : demographicsData?.totalBeneficiaries === 0 || !demographicsData ? (
+                <div className="au-stat-grid">
+                  <div className="col-span-4 p-8 text-center">
+                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">No Demographics Data Available</p>
+                    <p className="text-gray-500 text-sm">There are currently no beneficiaries to analyze for the selected scope</p>
+                  </div>
+                </div>
               ) : (
                 <div className="au-stat-grid">
                   <div className="au-stat-item">
@@ -440,7 +447,7 @@ export default function Demographics() {
                     <span className="au-stat-label">Female Recipients</span>
                   </div>
                   <div className="au-stat-item">
-                    <span className="au-stat-number">15</span>
+                    <span className="au-stat-number">{demographicsData?.topPrograms?.length || 0}</span>
                     <span className="au-stat-label">Countries Represented</span>
                   </div>
                   <div className="au-stat-item">
@@ -453,7 +460,8 @@ export default function Demographics() {
           </div>
 
           {/* Additional Filters */}
-          {((viewMode === 'all') || (selectedScholarship && (viewMode === 'single' || selectedCycles.length > 0))) && (
+          {((viewMode === 'all') || (selectedScholarship && (viewMode === 'single' || selectedCycles.length > 0))) &&
+           demographicsData && demographicsData.totalBeneficiaries > 0 && processedData.length > 0 && (
             <div className="container mx-auto px-8 py-6">
               <PatternWrapper pattern="dots" className="au-card">
                 <div className="p-6">
@@ -496,7 +504,8 @@ export default function Demographics() {
           )}
 
           {/* Visualization Grid */}
-          {((viewMode === 'all') || (selectedScholarship && (viewMode === 'single' || selectedCycles.length > 0))) && (
+          {((viewMode === 'all') || (selectedScholarship && (viewMode === 'single' || selectedCycles.length > 0))) &&
+           demographicsData && demographicsData.totalBeneficiaries > 0 && processedData.length > 0 && (
             <div className="container mx-auto px-8 pb-8">
             <div className="au-grid au-grid-2 mb-8">
               {/* Chart Visualization */}

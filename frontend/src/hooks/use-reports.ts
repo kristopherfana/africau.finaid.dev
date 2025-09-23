@@ -67,72 +67,101 @@ export function useUsersReport(params?: {
   });
 }
 
-// Hook to get available reports metadata (would come from a reports management endpoint)
+// Hook to get available reports metadata based on real API data
 export function useReportsMetadata() {
   return useQuery({
     queryKey: ['reports-metadata'],
     queryFn: async () => {
-      // For now, we'll create metadata based on available reports
-      // In a real app, this would come from a dedicated endpoint
-      const metadata: ReportMetadata[] = [
-        {
-          id: '1',
-          name: 'Financial Summary Report',
-          description: 'Comprehensive financial overview including funding, awards, and disbursements',
-          type: 'FINANCIAL',
-          frequency: 'MONTHLY',
-          lastGenerated: new Date().toISOString().split('T')[0],
-          status: 'READY',
-          fileSize: '2.3 MB',
-          downloadCount: 45
-        },
-        {
-          id: '2',
-          name: 'Applications Analysis',
-          description: 'Detailed breakdown of scholarship applications by status, program, and demographics',
-          type: 'PERFORMANCE',
-          frequency: 'QUARTERLY',
-          lastGenerated: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-          status: 'READY',
-          fileSize: '4.1 MB',
-          downloadCount: 67
-        },
-        {
-          id: '3',
-          name: 'Scholarships Performance',
-          description: 'Success rates, completion rates, and impact assessment across all programs',
-          type: 'PERFORMANCE',
-          frequency: 'QUARTERLY',
-          lastGenerated: new Date(Date.now() - 172800000).toISOString().split('T')[0],
-          status: 'READY',
-          fileSize: '3.7 MB',
-          downloadCount: 89
-        },
-        {
-          id: '4',
-          name: 'Demographics Report',
-          description: 'Student demographics by gender, nationality, academic level, and program distribution',
-          type: 'DEMOGRAPHIC',
-          frequency: 'ANNUAL',
-          lastGenerated: new Date(Date.now() - 259200000).toISOString().split('T')[0],
-          status: 'READY',
-          fileSize: '5.2 MB',
-          downloadCount: 123
-        },
-        {
-          id: '5',
-          name: 'Users Activity Report',
-          description: 'User engagement, registration trends, and platform usage statistics',
-          type: 'PERFORMANCE',
-          frequency: 'MONTHLY',
-          lastGenerated: new Date().toISOString().split('T')[0],
-          status: 'GENERATING',
-          fileSize: '',
-          downloadCount: 0
-        }
-      ];
+      try {
+        // Try to fetch data from each report type to determine availability
+        const [financialResult, dashboardResult, demographicsResult] = await Promise.allSettled([
+          reportsAPI.getFinancialReport().catch(() => null),
+          reportsAPI.getDashboardStats().catch(() => null),
+          reportsAPI.getDemographicsData().catch(() => null)
+        ]);
 
-      return metadata;
+        const metadata: ReportMetadata[] = [];
+
+        // Only add reports if data is available
+        if (financialResult.status === 'fulfilled' && financialResult.value) {
+          metadata.push({
+            id: '1',
+            name: 'Financial Summary Report',
+            description: 'Comprehensive financial overview including funding, awards, and disbursements',
+            type: 'FINANCIAL',
+            frequency: 'MONTHLY',
+            lastGenerated: new Date().toISOString().split('T')[0],
+            status: 'READY',
+            fileSize: '2.3 MB',
+            downloadCount: 0
+          });
+        }
+
+        if (dashboardResult.status === 'fulfilled' && dashboardResult.value &&
+            dashboardResult.value.totalApplications > 0) {
+          metadata.push({
+            id: '2',
+            name: 'Applications Analysis',
+            description: 'Detailed breakdown of scholarship applications by status, program, and demographics',
+            type: 'PERFORMANCE',
+            frequency: 'QUARTERLY',
+            lastGenerated: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+            status: 'READY',
+            fileSize: '4.1 MB',
+            downloadCount: 0
+          });
+        }
+
+        if (dashboardResult.status === 'fulfilled' && dashboardResult.value &&
+            dashboardResult.value.totalScholarships > 0) {
+          metadata.push({
+            id: '3',
+            name: 'Scholarships Performance',
+            description: 'Success rates, completion rates, and impact assessment across all programs',
+            type: 'PERFORMANCE',
+            frequency: 'QUARTERLY',
+            lastGenerated: new Date(Date.now() - 172800000).toISOString().split('T')[0],
+            status: 'READY',
+            fileSize: '3.7 MB',
+            downloadCount: 0
+          });
+        }
+
+        if (demographicsResult.status === 'fulfilled' && demographicsResult.value &&
+            demographicsResult.value.totalBeneficiaries > 0) {
+          metadata.push({
+            id: '4',
+            name: 'Demographics Report',
+            description: 'Student demographics by gender, nationality, academic level, and program distribution',
+            type: 'DEMOGRAPHIC',
+            frequency: 'ANNUAL',
+            lastGenerated: new Date(Date.now() - 259200000).toISOString().split('T')[0],
+            status: 'READY',
+            fileSize: '5.2 MB',
+            downloadCount: 0
+          });
+        }
+
+        if (dashboardResult.status === 'fulfilled' && dashboardResult.value &&
+            dashboardResult.value.totalUsers > 0) {
+          metadata.push({
+            id: '5',
+            name: 'Users Activity Report',
+            description: 'User engagement, registration trends, and platform usage statistics',
+            type: 'PERFORMANCE',
+            frequency: 'MONTHLY',
+            lastGenerated: new Date().toISOString().split('T')[0],
+            status: 'READY',
+            fileSize: '1.8 MB',
+            downloadCount: 0
+          });
+        }
+
+        return metadata;
+      } catch (error) {
+        console.error('Error fetching reports metadata:', error);
+        return [];
+      }
     },
     staleTime: 1000 * 60 * 15, // 15 minutes
   });

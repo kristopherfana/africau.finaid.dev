@@ -35,8 +35,6 @@ import {
   BarChart3,
   Download,
   Filter,
-  ChevronUp,
-  ChevronDown,
   AlertCircle
 } from 'lucide-react'
 import {
@@ -149,22 +147,6 @@ export default function CycleTracking() {
 
   const isLoading = dashboardLoading || demographicsLoading || cyclesLoading
   const hasError = dashboardError || demographicsError || cyclesError
-
-  const calculateChange = (current: number, previous: number) => {
-    const change = ((current - previous) / previous) * 100
-    return change
-  }
-
-  const renderChangeIndicator = (current: number, previous: number, inverse = false) => {
-    const change = calculateChange(current, previous)
-    const isPositive = inverse ? change < 0 : change > 0
-    return (
-      <span className={`flex items-center text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-        {isPositive ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        {Math.abs(change).toFixed(1)}%
-      </span>
-    )
-  }
 
   return (
     <>
@@ -629,7 +611,186 @@ export default function CycleTracking() {
             <div className="container mx-auto px-8 pb-8">
               <div className="au-section-header mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">
-                  {currentCycleData.name} Details
+                  Evolution Analysis
+                  {selectedScholarship && scholarshipsData?.data && (
+                    <span className="text-lg font-normal text-gray-600 ml-2">
+                      - {scholarshipsData.data.find(s => s.id === selectedScholarship)?.name}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-gray-600 mt-2">
+                  Analyzing {selectedCycleData.length} selected cycles to identify trends and patterns
+                </p>
+              </div>
+
+              <div className="au-grid au-grid-2 mb-8">
+                {/* Evolution Trends */}
+                <PatternWrapper pattern="dots" className="au-card">
+                  <div className="p-6">
+                    <h4 className="font-bold text-lg mb-4 flex items-center">
+                      <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+                      Growth Trends
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm">Applications Trend</span>
+                          <span className={`text-sm font-bold ${calculateEvolutionTrend(selectedCycleData, 'currentApplications') >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {calculateEvolutionTrend(selectedCycleData, 'currentApplications').toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${calculateEvolutionTrend(selectedCycleData, 'currentApplications') >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                            style={{ width: `${Math.min(Math.abs(calculateEvolutionTrend(selectedCycleData, 'currentApplications')), 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm">Award Amount Trend</span>
+                          <span className={`text-sm font-bold ${calculateEvolutionTrend(selectedCycleData, 'amount') >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {calculateEvolutionTrend(selectedCycleData, 'amount').toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${calculateEvolutionTrend(selectedCycleData, 'amount') >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                            style={{ width: `${Math.min(Math.abs(calculateEvolutionTrend(selectedCycleData, 'amount')), 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm">Capacity Trend</span>
+                          <span className={`text-sm font-bold ${calculateEvolutionTrend(selectedCycleData, 'maxRecipients') >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {calculateEvolutionTrend(selectedCycleData, 'maxRecipients').toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${calculateEvolutionTrend(selectedCycleData, 'maxRecipients') >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                            style={{ width: `${Math.min(Math.abs(calculateEvolutionTrend(selectedCycleData, 'maxRecipients')), 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </PatternWrapper>
+
+                {/* Key Statistics */}
+                <PatternWrapper pattern="geometric" className="au-card">
+                  <div className="p-6">
+                    <h4 className="font-bold text-lg mb-4 flex items-center">
+                      <BarChart3 className="w-5 h-5 mr-2 text-green-600" />
+                      Key Statistics
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Total Applications</p>
+                          <p className="text-lg font-bold">{getMetricStats(selectedCycleData, 'currentApplications').total}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Avg per Cycle</p>
+                          <p className="text-lg font-bold">{Math.round(getMetricStats(selectedCycleData, 'currentApplications').avg)}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Total Funding</p>
+                          <p className="text-lg font-bold">${(getMetricStats(selectedCycleData, 'amount').total / 1000).toFixed(0)}K</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Avg Award</p>
+                          <p className="text-lg font-bold">${Math.round(getMetricStats(selectedCycleData, 'amount').avg).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Max Capacity</p>
+                          <p className="text-lg font-bold">{getMetricStats(selectedCycleData, 'maxRecipients').max}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Min Capacity</p>
+                          <p className="text-lg font-bold">{getMetricStats(selectedCycleData, 'maxRecipients').min}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </PatternWrapper>
+              </div>
+
+              {/* Cycle Comparison Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {selectedCycleData.map((cycle, index) => (
+                  <Card key={cycle.id} className="relative">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium truncate" title={cycle.name}>
+                        {cycle.name}
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Cycle {index + 1} of {selectedCycleData.length}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-xs text-gray-500">Applications</p>
+                          <p className="font-semibold">{cycle.currentApplications}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Capacity</p>
+                          <p className="font-semibold">{cycle.maxRecipients}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Award</p>
+                          <p className="font-semibold">${cycle.amount.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Status</p>
+                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                            cycle.status === 'OPEN' ? 'bg-green-100 text-green-800' :
+                            cycle.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
+                            cycle.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {cycle.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs text-gray-500">Fill Rate</span>
+                          <span className="text-xs font-medium">
+                            {((cycle.currentApplications / cycle.maxRecipients) * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className="bg-blue-500 h-1.5 rounded-full"
+                            style={{ width: `${Math.min((cycle.currentApplications / cycle.maxRecipients) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Single Cycle Detailed Analysis */}
+          {viewMode === 'single' && selectedCycleData.length === 1 && (
+            <div className="container mx-auto px-8 pb-8">
+              <div className="au-section-header mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {selectedCycleData[0].name} Details
                   {selectedScholarship && scholarshipsData?.data && (
                     <span className="text-lg font-normal text-gray-600 ml-2">
                       - {scholarshipsData.data.find(s => s.id === selectedScholarship)?.name}
@@ -648,7 +809,7 @@ export default function CycleTracking() {
                           <span className="text-sm">Application Period</span>
                         </div>
                         <p className="text-sm font-bold">
-                          {new Date(currentCycleData.applicationStartDate).toLocaleDateString()} - {new Date(currentCycleData.applicationDeadline).toLocaleDateString()}
+                          {new Date(selectedCycleData[0].applicationStartDate).toLocaleDateString()} - {new Date(selectedCycleData[0].applicationDeadline).toLocaleDateString()}
                         </p>
                       </div>
                       <div>
@@ -656,11 +817,12 @@ export default function CycleTracking() {
                           <span className="text-sm">Status</span>
                         </div>
                         <span className={`text-sm px-2 py-1 rounded-full ${
-                          currentCycleData.status === 'OPEN' ? 'bg-green-100 text-green-800' :
-                          currentCycleData.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
-                          'bg-yellow-100 text-yellow-800'
+                          selectedCycleData[0].status === 'OPEN' ? 'bg-green-100 text-green-800' :
+                          selectedCycleData[0].status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
+                          selectedCycleData[0].status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
                         }`}>
-                          {currentCycleData.status}
+                          {selectedCycleData[0].status}
                         </span>
                       </div>
                       <div>
@@ -668,7 +830,7 @@ export default function CycleTracking() {
                           <span className="text-sm">Award Amount</span>
                         </div>
                         <p className="text-sm font-bold">
-                          ${currentCycleData.amount.toLocaleString()}
+                          ${selectedCycleData[0].amount.toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -684,13 +846,13 @@ export default function CycleTracking() {
                         <div className="flex justify-between mb-1">
                           <span className="text-sm">Current Applications</span>
                           <span className="text-sm font-bold">
-                            {currentCycleData.currentApplications}
+                            {selectedCycleData[0].currentApplications}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-3">
                           <div
                             className="bg-blue-500 h-3 rounded-full"
-                            style={{ width: `${Math.min((currentCycleData.currentApplications / currentCycleData.maxRecipients) * 100, 100)}%` }}
+                            style={{ width: `${Math.min((selectedCycleData[0].currentApplications / selectedCycleData[0].maxRecipients) * 100, 100)}%` }}
                           />
                         </div>
                       </div>
@@ -698,62 +860,46 @@ export default function CycleTracking() {
                         <div className="flex justify-between mb-1">
                           <span className="text-sm">Max Recipients</span>
                           <span className="text-sm font-bold">
-                            {currentCycleData.maxRecipients}
+                            {selectedCycleData[0].maxRecipients}
                           </span>
                         </div>
                         <p className="text-xs text-gray-600">
-                          {currentCycleData.maxRecipients - currentCycleData.currentApplications} slots remaining
+                          {selectedCycleData[0].maxRecipients - selectedCycleData[0].currentApplications} slots remaining
                         </p>
                       </div>
                     </div>
                   </div>
                 </PatternWrapper>
 
-                {/* Comparison */}
-                {comparisonCycleData ? (
-                  <PatternWrapper pattern="grid" className="au-card">
-                    <div className="p-6">
-                      <h4 className="font-bold text-lg mb-4">Comparison</h4>
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-2">
-                          <TrendingUp className="w-4 h-4 text-green-500 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Applications Growth</p>
-                            <p className="text-xs text-gray-600">
-                              {calculateChange(currentCycleData.currentApplications, comparisonCycleData.currentApplications).toFixed(1)}% vs comparison cycle
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <DollarSign className="w-4 h-4 text-blue-500 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Award Amount Change</p>
-                            <p className="text-xs text-gray-600">
-                              {calculateChange(currentCycleData.amount, comparisonCycleData.amount).toFixed(1)}% change
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Users className="w-4 h-4 text-purple-500 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Capacity Change</p>
-                            <p className="text-xs text-gray-600">
-                              {calculateChange(currentCycleData.maxRecipients, comparisonCycleData.maxRecipients).toFixed(1)}% change in max recipients
-                            </p>
-                          </div>
-                        </div>
+                {/* Program Context */}
+                <PatternWrapper pattern="grid" className="au-card">
+                  <div className="p-6">
+                    <h4 className="font-bold text-lg mb-4">Program Context</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium">Sponsor</p>
+                        <p className="text-xs text-gray-600">{selectedCycleData[0].sponsor}</p>
                       </div>
+                      <div>
+                        <p className="text-sm font-medium">Scholarship Type</p>
+                        <p className="text-xs text-gray-600">{selectedCycleData[0].type}</p>
+                      </div>
+                      {selectedCycleData[0].eligibilityCriteria && selectedCycleData[0].eligibilityCriteria.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium">Eligibility Criteria</p>
+                          <ul className="text-xs text-gray-600 mt-1">
+                            {selectedCycleData[0].eligibilityCriteria.slice(0, 3).map((criteria, index) => (
+                              <li key={index} className="truncate">• {criteria}</li>
+                            ))}
+                            {selectedCycleData[0].eligibilityCriteria.length > 3 && (
+                              <li className="text-gray-500">• +{selectedCycleData[0].eligibilityCriteria.length - 3} more</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  </PatternWrapper>
-                ) : (
-                  <PatternWrapper pattern="grid" className="au-card">
-                    <div className="p-6 text-center">
-                      <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 mb-2">Select Comparison Cycle</p>
-                      <p className="text-gray-500 text-sm">Choose a second cycle to see comparative analysis</p>
-                    </div>
-                  </PatternWrapper>
-                )}
+                  </div>
+                </PatternWrapper>
               </div>
             </div>
           )}

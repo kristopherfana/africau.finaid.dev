@@ -179,6 +179,16 @@ export default function Reports() {
                     </div>
                   ))}
                 </div>
+              ) : totalReports === 0 ? (
+                <div className="au-stat-grid">
+                  <div className="col-span-4 p-8 text-center">
+                    <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">No Reports Data Available</p>
+                    <p className="text-gray-500 text-sm">
+                      Reports will be available once there's scholarship data to analyze
+                    </p>
+                  </div>
+                </div>
               ) : (
                 <div className="au-stat-grid">
                   <div className="au-stat-item">
@@ -331,69 +341,79 @@ export default function Reports() {
               </div>
             </PatternWrapper>
 
-            {/* Quick Report Actions */}
-            <div className="au-grid au-grid-4 mb-8">
-              <PatternWrapper pattern="dots" className="au-card">
-                <button
-                  className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
-                  onClick={() => {
-                    // Trigger financial report download
-                    window.open('/api/reports/financial-report?format=pdf', '_blank')
-                  }}
-                >
-                  <BarChart3 className="w-8 h-8 mx-auto mb-3 text-blue-600" />
-                  <span className="font-semibold">Financial Summary</span>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {financialData ? `$${(financialData.totalFunding / 1000000).toFixed(1)}M total` : 'Loading...'}
-                  </p>
-                </button>
-              </PatternWrapper>
-              <PatternWrapper pattern="geometric" className="au-card">
-                <button
-                  className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
-                  onClick={() => {
-                    // Trigger demographics report download
-                    window.open('/api/reports/demographics?format=pdf', '_blank')
-                  }}
-                >
-                  <PieChart className="w-8 h-8 mx-auto mb-3 text-green-600" />
-                  <span className="font-semibold">Demographics</span>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {dashboardStats ? `${dashboardStats.totalUsers} users` : 'Loading...'}
-                  </p>
-                </button>
-              </PatternWrapper>
-              <PatternWrapper pattern="grid" className="au-card">
-                <button
-                  className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
-                  onClick={() => {
-                    // Trigger applications report download
-                    window.open('/api/reports/applications-report?format=pdf', '_blank')
-                  }}
-                >
-                  <TrendingUp className="w-8 h-8 mx-auto mb-3 text-purple-600" />
-                  <span className="font-semibold">Applications</span>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {dashboardStats ? `${dashboardStats.totalApplications} total` : 'Loading...'}
-                  </p>
-                </button>
-              </PatternWrapper>
-              <PatternWrapper pattern="dots" className="au-card">
-                <button
-                  className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
-                  onClick={() => {
-                    // Trigger scholarships report download
-                    window.open('/api/reports/scholarships-report?format=pdf', '_blank')
-                  }}
-                >
-                  <Users className="w-8 h-8 mx-auto mb-3 text-yellow-600" />
-                  <span className="font-semibold">Scholarships</span>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {dashboardStats ? `${dashboardStats.totalScholarships} active` : 'Loading...'}
-                  </p>
-                </button>
-              </PatternWrapper>
-            </div>
+            {/* Quick Report Actions - only show if there's data */}
+            {(dashboardStats && (dashboardStats.totalApplications > 0 || dashboardStats.totalScholarships > 0 || dashboardStats.totalUsers > 0)) || financialData ? (
+              <div className="au-grid au-grid-4 mb-8">
+                {financialData && (
+                  <PatternWrapper pattern="dots" className="au-card">
+                    <button
+                      className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
+                      onClick={() => {
+                        // Trigger financial report download
+                        window.open('/api/reports/financial-report?format=pdf', '_blank')
+                      }}
+                    >
+                      <BarChart3 className="w-8 h-8 mx-auto mb-3 text-blue-600" />
+                      <span className="font-semibold">Financial Summary</span>
+                      <p className="text-xs text-gray-600 mt-1">
+                        ${(financialData.totalFunding / 1000000).toFixed(1)}M total
+                      </p>
+                    </button>
+                  </PatternWrapper>
+                )}
+                {dashboardStats && dashboardStats.totalUsers > 0 && (
+                  <PatternWrapper pattern="geometric" className="au-card">
+                    <button
+                      className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
+                      onClick={() => {
+                        // Trigger demographics report download
+                        window.open('/api/reports/demographics?format=pdf', '_blank')
+                      }}
+                    >
+                      <PieChart className="w-8 h-8 mx-auto mb-3 text-green-600" />
+                      <span className="font-semibold">Demographics</span>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {dashboardStats.totalUsers} users
+                      </p>
+                    </button>
+                  </PatternWrapper>
+                )}
+                {dashboardStats && dashboardStats.totalApplications > 0 && (
+                  <PatternWrapper pattern="grid" className="au-card">
+                    <button
+                      className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
+                      onClick={() => {
+                        // Trigger applications report download
+                        window.open('/api/reports/applications-report?format=pdf', '_blank')
+                      }}
+                    >
+                      <TrendingUp className="w-8 h-8 mx-auto mb-3 text-purple-600" />
+                      <span className="font-semibold">Applications</span>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {dashboardStats.totalApplications} total
+                      </p>
+                    </button>
+                  </PatternWrapper>
+                )}
+                {dashboardStats && dashboardStats.totalScholarships > 0 && (
+                  <PatternWrapper pattern="dots" className="au-card">
+                    <button
+                      className="p-6 text-center hover:shadow-lg transition-all duration-200 w-full"
+                      onClick={() => {
+                        // Trigger scholarships report download
+                        window.open('/api/reports/scholarships-report?format=pdf', '_blank')
+                      }}
+                    >
+                      <Users className="w-8 h-8 mx-auto mb-3 text-yellow-600" />
+                      <span className="font-semibold">Scholarships</span>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {dashboardStats.totalScholarships} active
+                      </p>
+                    </button>
+                  </PatternWrapper>
+                )}
+              </div>
+            ) : null}
 
             {/* Reports Table */}
             <PatternWrapper pattern="geometric" className="au-card">
@@ -421,6 +441,27 @@ export default function Reports() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  ) : filteredReports.length === 0 ? (
+                    <div className="p-12 text-center">
+                      <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-600 mb-2">No Reports Available</h3>
+                      <p className="text-gray-500 mb-4">
+                        {totalReports === 0
+                          ? "There are currently no reports available. Reports will appear here once there's data to analyze."
+                          : "No reports match your current filters. Try adjusting your search criteria."
+                        }
+                      </p>
+                      {totalReports === 0 && (
+                        <Button
+                          variant="outline"
+                          className="flex items-center mx-auto"
+                          onClick={() => setShowCustomBuilder(true)}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Custom Report
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <Table>
