@@ -183,6 +183,36 @@ export class ScholarshipsService {
     return this.mapToResponseDto(scholarship);
   }
 
+  async findCyclesByProgram(programId: string): Promise<ScholarshipResponseDto[]> {
+    // First verify the program exists
+    const program = await this.prisma.scholarshipProgram.findUnique({
+      where: { id: programId },
+      include: { sponsor: true }
+    });
+
+    if (!program) {
+      throw new NotFoundException(`Scholarship program with ID ${programId} not found`);
+    }
+
+    const cycles = await this.prisma.scholarshipCycle.findMany({
+      where: { programId },
+      include: {
+        program: {
+          include: {
+            sponsor: true
+          }
+        },
+        applications: true,
+        criteria: true
+      },
+      orderBy: {
+        academicYear: 'desc'
+      }
+    });
+
+    return cycles.map(cycle => this.mapToResponseDto(cycle));
+  }
+
   async update(id: string, updateScholarshipDto: UpdateScholarshipDto): Promise<ScholarshipResponseDto> {
     const existingScholarship = await this.prisma.scholarshipCycle.findUnique({
       where: { id },

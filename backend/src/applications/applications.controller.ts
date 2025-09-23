@@ -58,8 +58,8 @@ export class ApplicationsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STUDENT)
-  @ApiOperation({ summary: 'Get all applications with filters (admin and students only)' })
+  @Roles(UserRole.ADMIN, UserRole.STUDENT, UserRole.DEVELOPMENT_OFFICE)
+  @ApiOperation({ summary: 'Get all applications with filters (admin, students, and development office only)' })
   @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'WITHDRAWN'] })
   @ApiQuery({ name: 'scholarshipId', required: false, type: String })
   @ApiQuery({ name: 'applicantId', required: false, type: String })
@@ -101,8 +101,8 @@ export class ApplicationsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.STUDENT)
-  @ApiOperation({ summary: 'Get an application by ID (admin and students only)' })
+  @Roles(UserRole.ADMIN, UserRole.STUDENT, UserRole.DEVELOPMENT_OFFICE)
+  @ApiOperation({ summary: 'Get an application by ID (admin, students, and development office only)' })
   @ApiParam({ name: 'id', description: 'Application ID' })
   @ApiResponse({
     status: 200,

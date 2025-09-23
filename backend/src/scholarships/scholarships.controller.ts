@@ -118,6 +118,19 @@ export class ScholarshipsController {
     return this.scholarshipsService.update(id, updateScholarshipDto);
   }
 
+  @Get('programs/:programId/cycles')
+  @ApiOperation({ summary: 'Get all cycles for a scholarship program' })
+  @ApiParam({ name: 'programId', description: 'Scholarship Program ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of scholarship cycles for the program',
+    type: [ScholarshipResponseDto],
+  })
+  @ApiResponse({ status: 404, description: 'Program not found' })
+  async findCyclesByProgram(@Param('programId') programId: string): Promise<ScholarshipResponseDto[]> {
+    return this.scholarshipsService.findCyclesByProgram(programId);
+  }
+
   @Delete(':id')
   @Roles(UserRole.DEVELOPMENT_OFFICE, UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)

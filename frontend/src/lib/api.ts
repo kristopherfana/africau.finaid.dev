@@ -197,15 +197,17 @@ export const usersAPI = {
 
 // Scholarships API
 export const scholarshipsAPI = {
-  getAll: (params?: ScholarshipFilters): Promise<ScholarshipResponse> => 
+  getAll: (params?: ScholarshipFilters): Promise<ScholarshipResponse> =>
     apiClient.get('/scholarships', { params }),
-  getById: (id: string): Promise<Scholarship> => 
+  getById: (id: string): Promise<Scholarship> =>
     apiClient.get(`/scholarships/${id}`),
-  create: (data: any): Promise<Scholarship> => 
+  getCyclesByProgram: (programId: string): Promise<Scholarship[]> =>
+    apiClient.get(`/scholarships/programs/${programId}/cycles`),
+  create: (data: any): Promise<Scholarship> =>
     apiClient.post('/scholarships', data),
-  update: (id: string, data: any): Promise<Scholarship> => 
+  update: (id: string, data: any): Promise<Scholarship> =>
     apiClient.put(`/scholarships/${id}`, data),
-  delete: (id: string): Promise<void> => 
+  delete: (id: string): Promise<void> =>
     apiClient.delete(`/scholarships/${id}`),
 }
 

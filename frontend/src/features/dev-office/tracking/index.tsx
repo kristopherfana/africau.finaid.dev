@@ -5,6 +5,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { PatternWrapper } from '@/components/au-showcase'
 import { useDashboardStats, useDemographicsData } from '@/hooks/use-dashboard-stats'
+import { useActiveScholarships } from '@/hooks/use-scholarships'
 import {
   Select,
   SelectContent,
@@ -117,9 +118,11 @@ const mockYearlyData: YearlyData[] = [
 export default function YearlyTracking() {
   const [selectedYear, setSelectedYear] = useState<string>('2025')
   const [comparisonYear, setComparisonYear] = useState<string>('2024')
+  const [scholarshipFilter, setScholarshipFilter] = useState<string>('all')
 
   const { data: dashboardStats, isLoading: dashboardLoading, error: dashboardError } = useDashboardStats()
   const { data: demographicsData, isLoading: demographicsLoading, error: demographicsError } = useDemographicsData()
+  const { data: scholarshipsData } = useActiveScholarships()
 
   // Create current year data from API
   const currentYearData = {
@@ -185,7 +188,14 @@ export default function YearlyTracking() {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-800 mb-2">Yearly Tracking</h1>
-                  <p className="text-gray-600">Monitor scholarship performance and trends over time</p>
+                  <p className="text-gray-600">
+                    Monitor scholarship performance and trends over time
+                    {scholarshipFilter !== 'all' && scholarshipsData?.data && (
+                      <span className="block text-sm mt-1 text-blue-600 font-medium">
+                        Filtered by: {scholarshipsData.data.find(s => s.id === scholarshipFilter)?.name}
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <Button className="au-btn-secondary flex items-center">
                   <Download className="w-4 h-4 mr-2" />
@@ -231,6 +241,23 @@ export default function YearlyTracking() {
                               {data.year}
                             </SelectItem>
                           ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Award className="w-5 h-5 text-gray-600" />
+                    <span className="font-semibold">Scholarship:</span>
+                    <Select value={scholarshipFilter} onValueChange={setScholarshipFilter}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All Scholarships" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Scholarships</SelectItem>
+                        {scholarshipsData?.data?.map((scholarship) => (
+                          <SelectItem key={scholarship.id} value={scholarship.id}>
+                            {scholarship.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -373,8 +400,8 @@ export default function YearlyTracking() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {((data.femaleCount / data.maleCount) * 100).toFixed(0)}:
-                            {((data.maleCount / data.maleCount) * 100).toFixed(0)}
+                            {((data.femaleCount / (data.femaleCount + data.maleCount)) * 100).toFixed(0)}:
+                            {((data.maleCount / (data.femaleCount + data.maleCount)) * 100).toFixed(0)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -388,7 +415,14 @@ export default function YearlyTracking() {
           {/* Demographics Breakdown */}
           <div className="container mx-auto px-8 pb-8">
             <div className="au-section-header mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">{selectedYear} Demographics Breakdown</h2>
+              <h2 className="text-2xl font-bold text-gray-800">
+                {selectedYear} Demographics Breakdown
+                {scholarshipFilter !== 'all' && scholarshipsData?.data && (
+                  <span className="text-lg font-normal text-gray-600 ml-2">
+                    - {scholarshipsData.data.find(s => s.id === scholarshipFilter)?.name}
+                  </span>
+                )}
+              </h2>
             </div>
             <div className="au-grid au-grid-3">
               {/* Gender Distribution */}

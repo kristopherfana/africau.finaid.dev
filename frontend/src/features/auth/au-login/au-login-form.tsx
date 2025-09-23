@@ -55,6 +55,8 @@ export function AULoginForm({ className, ...props }: UserAuthFormProps) {
             navigate({ to: '/admin/applications' })
           } else if (user.role === 'SPONSOR') {
             navigate({ to: '/scholarships' })
+          } else if (user.role === 'DEVELOPMENT_OFFICE') {
+            navigate({ to: '/dev-office' })
           } else {
             navigate({ to: '/scholarships' })
           }
